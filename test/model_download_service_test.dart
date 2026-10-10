@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:path/path.dart' as p;
 import 'package:sovereign_ai/models/local_model.dart';
 import 'package:sovereign_ai/services/model_download_service.dart';
 import 'package:sovereign_ai/services/storage_service.dart';
@@ -235,7 +236,7 @@ void main() {
       'ModelState discovers existing GGUF models in storage directory',
       () async {
         final preFile = File(
-          '${tempDir.path}/smollm2-135m-instruct-q4_k_m.gguf',
+          p.join(tempDir.path, 'smollm2-135m-instruct-q4_k_m.gguf'),
         );
         await preFile.writeAsBytes(validGgufBytes);
 
@@ -244,7 +245,10 @@ void main() {
 
         final smol = state.models.firstWhere((m) => m.id == 'smollm2-135m-q4');
         expect(smol.downloadStatus, ModelDownloadStatus.downloaded);
-        expect(smol.localPath, preFile.path);
+        expect(
+          p.canonicalize(smol.localPath!),
+          equals(p.canonicalize(preFile.path)),
+        );
 
         state.dispose();
       },
@@ -254,7 +258,9 @@ void main() {
       'ModelState imports local GGUF file with validation and copy',
       () async {
         final externalDir = await Directory.systemTemp.createTemp('ext_');
-        final externalFile = File('${externalDir.path}/custom_model.gguf');
+        final externalFile = File(
+          p.join(externalDir.path, 'custom_model.gguf'),
+        );
         await externalFile.writeAsBytes(validGgufBytes);
 
         final storage = InMemoryStorageService();
@@ -272,7 +278,10 @@ void main() {
         );
         expect(imported.sourceType, ModelSourceType.imported);
         expect(imported.downloadStatus, ModelDownloadStatus.downloaded);
-        expect(File('${tempDir.path}/custom_model.gguf').existsSync(), isTrue);
+        expect(
+          File(p.join(tempDir.path, 'custom_model.gguf')).existsSync(),
+          isTrue,
+        );
 
         // Verify custom models were persisted in storage
         final loaded = await storage.loadCustomModels();
@@ -287,7 +296,7 @@ void main() {
       'ModelState deleteModel resets catalog item and deletes file',
       () async {
         final preFile = File(
-          '${tempDir.path}/smollm2-135m-instruct-q4_k_m.gguf',
+          p.join(tempDir.path, 'smollm2-135m-instruct-q4_k_m.gguf'),
         );
         await preFile.writeAsBytes(validGgufBytes);
 
