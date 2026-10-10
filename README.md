@@ -1,50 +1,79 @@
 <div align="center">
 
-# 🧠 Sovereign AI
+<p align="center">
+  <img src="media/banner.jpg" alt="Sovereign AI Banner" width="100%" style="border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+</p>
 
+# 🧠 Sovereign AI
 ### *100% Offline, Private, Cross-Platform On-Device AI with Neural RAG & Local GGUF Inference*
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.47.7-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.13.5-0175C2?logo=dart&logoColor=white)](https://dart.dev)
-[![Platforms](https://img.shields.io/badge/Platforms-macOS%20%7C%20Android%20%7C%20iOS%20%7C%20Windows%20%7C%20Linux-blueviolet)](#cross-platform-support)
-[![Inference](https://img.shields.io/badge/Inference-llama.cpp%20via%20llamadart-orange)](https://github.com/ggerganov/llama.cpp)
-[![Embeddings](https://img.shields.io/badge/Embeddings-all--MiniLM--L6--v2%20(384--d)-green)](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2)
-[![Privacy](https://img.shields.io/badge/Privacy-Zero%20Cloud%20%7C%20Zero%20Telemetry-success)](#privacy--security-guarantees)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+<p align="center">
+  <a href="#-quick-download-v100"><img src="https://img.shields.io/badge/Release-v1.0.0-blueviolet?style=for-the-badge&logo=github&logoColor=white" alt="Release v1.0.0"></a>
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.47.7-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"></a>
+  <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.13.5-0175C2?style=for-the-badge&logo=dart&logoColor=white" alt="Dart"></a>
+  <a href="#-privacy--security-guarantees"><img src="https://img.shields.io/badge/Privacy-100%25%20On--Device-success?style=for-the-badge&logo=shield&logoColor=white" alt="On-Device"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge" alt="License"></a>
+</p>
 
 ---
 
-**Sovereign AI** is a production-grade, offline-first personal AI assistant built with Flutter. It runs large language models (LLMs) and neural embeddings directly on your device's hardware using Metal (Apple Silicon), ARM NEON (Android/iOS), and AVX2 (Desktop x86_64).
+## ⚡ Instant Downloads (v1.0.0 Production Releases)
 
-**No cloud APIs. No Ollama daemon. No external server. Pure local compute.**
+Choose your platform below to download the pre-compiled, production-ready app:
+
+<p align="center">
+  <a href="https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/app-release.apk">
+    <img src="https://img.shields.io/badge/Download-Android_APK_(ARM64)-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" height="42">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-1.0.0-macos.zip">
+    <img src="https://img.shields.io/badge/Download-macOS_App_(Universal)-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download macOS App" height="42">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-Windows-x64.zip">
+    <img src="https://img.shields.io/badge/Download-Windows_x64_(Zip)-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download Windows Release" height="42">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-Linux-x64.zip">
+    <img src="https://img.shields.io/badge/Download-Linux_x64_(Zip)-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Download Linux Release" height="42">
+  </a>
+</p>
+
+| Operating System | Package Format | Architecture | Direct Download Link |
+| :--- | :---: | :---: | :--- |
+| **🤖 Android** | `.apk` (Standalone) | `arm64-v8a` (Android 7.0+) | [📥 **Download `app-release.apk`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/app-release.apk) |
+| **🍏 macOS** | `.zip` (Universal `.app`) | Apple Silicon (M1-M4) & Intel | [📥 **Download `SovereignAI-1.0.0-macos.zip`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-1.0.0-macos.zip) |
+| **🪟 Windows** | `.zip` (Portable `.exe` + DLLs) | 64-bit `x86_64` (Win 10/11) | [📥 **Download `SovereignAI-Windows-x64.zip`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-Windows-x64.zip) |
+| **🐧 Linux** | `.zip` (Portable Bundle) | 64-bit `x86_64` (Ubuntu / Debian / Fedora) | [📥 **Download `SovereignAI-Linux-x64.zip`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-Linux-x64.zip) |
+
+---
 
 </div>
 
----
+## 📖 Overview
 
-## 📑 Table of Contents
+**Sovereign AI** gives you sovereign, air-gapped personal artificial intelligence. By utilizing native C++ bindings to `llama.cpp` through `llamadart`, it executes quantized GGUF chat models and neural embedding models entirely in local device memory—leveraging **Metal** on Apple Silicon, **ARM NEON** on mobile, and **AVX2** on Desktop.
 
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-- [Prerequisites & System Requirements](#-prerequisites--system-requirements)
-- [Clone and Setup](#-clone-and-setup)
-- [Running the App](#-running-the-app)
-  - [macOS Desktop](#1-macos-desktop)
-  - [Android](#2-android)
-  - [iOS](#3-ios)
-  - [Windows & Linux](#4-windows--linux)
-- [Model Management & Recommended Models](#-model-management--recommended-models)
-- [Document Ingestion & Local Neural RAG](#-document-ingestion--local-neural-rag)
-- [Automated Testing & Static Analysis](#-automated-testing--static-analysis)
-- [Building Production Releases](#-building-production-releases)
-- [CI/CD Workflows](#-cicd-workflows)
-- [Project Directory Structure](#-project-directory-structure)
-- [Privacy & Security Guarantees](#-privacy--security-guarantees)
-- [License](#-license)
+### 🚫 What Sovereign AI NEVER does:
+- ❌ **No Cloud Inference**: Never transmits your prompts, documents, or responses to OpenAI, Anthropic, or external servers.
+- ❌ **No External Daemons**: No Docker containers or background Ollama processes needed.
+- ❌ **No Telemetry**: Absolutely zero usage analytics, tracking, or fingerprinting.
 
 ---
 
 ## ✨ Key Features
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│  🧠 Local GGUF Engine       🔍 Hybrid Neural RAG    📄 Document Chat   │
+│  Native llama.cpp execution  Dense vectors + BM25    PDF, DOCX, TXT,   │
+│  via Metal & ARM NEON        Reciprocal Rank Fusion  CSV, JSON, LOG    │
+│                                                                        │
+│  📦 Model Manager           🛡️ Atomic Storage       🎨 Modern UI       │
+│  In-app GGUF downloads       Serialized JSON queues  ChatGPT aesthetic │
+│  & custom file imports       Zero SQLite / Hive      Dark / Light Mode │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
 - **⚡ Local GGUF LLM Inference**: Direct native bindings to `llama.cpp` via `llamadart`. Stream tokens smoothly on-device with zero network latency.
 - **🔍 Hybrid Neural RAG (Dense + BM25)**:
@@ -99,7 +128,7 @@ graph TD
 
 ## 💻 Prerequisites & System Requirements
 
-Ensure the following tools are installed on your workstation:
+Ensure the following tools are installed on your workstation if building from source:
 
 | Tool | Minimum Version | Recommended |
 | :--- | :--- | :--- |
@@ -114,7 +143,7 @@ Ensure the following tools are installed on your workstation:
 
 ---
 
-## 🚀 Clone and Setup
+## 🚀 Clone and Setup (Developers)
 
 ### 1. Clone the Repository
 ```bash
@@ -126,7 +155,6 @@ cd local_ai_flutter
 ```bash
 flutter doctor -v
 ```
-*Ensure that Flutter, Dart, and your target platform tools (Xcode or Android toolchain) have green checkmarks.*
 
 ### 3. Install Dependencies
 ```bash
@@ -142,44 +170,40 @@ flutter test
 
 ---
 
-## 📱 Running the App
+## 📱 Running the App Locally
 
 ### 1. macOS Desktop
-Ensure macOS desktop support is enabled:
 ```bash
 flutter config --enable-macos-desktop
 flutter run -d macos
 ```
 
 ### 2. Android
-Connect your Android device via USB (or start an Android Emulator with ABI `arm64-v8a` or `x86_64`):
+Connect your Android phone via USB with USB Debugging enabled:
 ```bash
-flutter devices
 flutter run -d <device_id>
 ```
 
-### 3. iOS
-Open the iOS Simulator or connect a physical iPhone:
+### 3. iOS Simulator
 ```bash
 flutter run -d ios
 ```
-*Note: Physical iOS devices require configuring your Apple Developer Team in `ios/Runner.xcworkspace`.*
 
-### 4. Windows & Linux
-Enable desktop support on your respective host OS:
+### 4. Windows Desktop
 ```bash
-# On Windows:
 flutter config --enable-windows-desktop
 flutter run -d windows
+```
 
-# On Linux:
+### 5. Linux Desktop
+```bash
 flutter config --enable-linux-desktop
 flutter run -d linux
 ```
 
 ---
 
-## 🤖 Model Management & Recommended Models
+## 🤖 Model Management & Curated Catalog
 
 Sovereign AI operates completely offline by utilizing GGUF format weights. Open the **Model Manager** tab in the app to download curated models or import files from your device:
 
@@ -192,8 +216,6 @@ Sovereign AI operates completely offline by utilizing GGUF format weights. Open 
 | **Qwen 2.5 1.5B Instruct** | **1.1 GB** | Qwen | Excellent instruction following, code generation, and reasoning. |
 | **Gemma 2 2B IT Abliterated** | **1.6 GB** | Gemma | Uncensored local model with refusal mechanisms neutralized. |
 | **Llama 3.2 3B Instruct** | **2.0 GB** | Llama | Desktop & flagship phone model for complex analytical tasks. |
-
-> **Note:** Models are stored securely in the app's document directory (`~/sovereign_ai/models`). You can also import any custom `.gguf` file downloaded from Hugging Face.
 
 ---
 
@@ -210,9 +232,7 @@ To chat with private documents:
 
 ---
 
-## 🧪 Automated Testing & Static Analysis
-
-The project includes unit, integration, and benchmark tests covering the inference runtime, RAG parser, vector indexing, and UI state:
+## 🧪 Automated Testing & Benchmark Suite
 
 ```bash
 # Run code analysis
@@ -225,65 +245,26 @@ flutter test
 flutter test test/rag_neural_benchmark_test.dart
 ```
 
-### Benchmark Metrics Verified:
-- **L2 Vector Normalization**: Unit vectors satisfy $\|v\| = 1.0 \pm 10^{-5}$.
-- **Paraphrased Queries**: Neural cosine search retrieves relevant passages where lexical BM25 scores 0.
-- **Exact Identifiers**: BM25 and Hybrid guarantee 100% precision for error codes (e.g. `ERR-9940-KERNEL`) and part numbers.
-- **Model Fallback**: Graceful degradation to BM25 when embeddings are unavailable.
-
 ---
 
 ## 📦 Building Production Releases
 
-### 1. macOS Universal App (.app & .zip)
 ```bash
+# macOS Universal App (.app)
 flutter build macos --release
-```
-- **Output:** `build/macos/Build/Products/Release/sovereign_ai.app` (82.2 MB)
-- Package into distributable archive:
-  ```bash
-  cd build/macos/Build/Products/Release
-  zip -r SovereignAI-1.0.0-macos.zip sovereign_ai.app
-  ```
 
-### 2. Android ARM64 Release APK
-```bash
+# Android ARM64 APK (.apk)
 flutter build apk --release --target-platform android-arm64
-```
-- **Output:** `build/app/outputs/flutter-apk/app-release.apk` (128.7 MB)
 
-### 3. iOS Package (.ipa)
-```bash
-# Build unsigned release payload (no certificates required)
+# iOS Release (.ipa payload)
 flutter build ios --release --no-codesign
 
-# Package into .ipa
-mkdir -p build/ios/ipa/Payload
-cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
-cd build/ios/ipa && zip -r SovereignAI-1.0.0-ios-unsigned.ipa Payload
-```
-
-### 4. Windows Desktop Release
-```bash
+# Windows Desktop (.exe + DLLs)
 flutter build windows --release
-```
-- **Output:** `build/windows/x64/runner/Release/`
 
-### 5. Linux Desktop Release
-```bash
+# Linux Desktop (Bundle)
 flutter build linux --release
 ```
-- **Output:** `build/linux/x64/release/bundle/`
-
----
-
-## ⚙️ CI/CD Workflows
-
-Continuous Integration and Release packaging are automated with GitHub Actions:
-
-- [`.github/workflows/release-windows.yml`](.github/workflows/release-windows.yml): Builds on `windows-latest`, compiles C++ Win32 runner, packages `SovereignAI-1.0.0-windows-x64.zip`, and generates SHA-256 hashes.
-- [`.github/workflows/release-linux.yml`](.github/workflows/release-linux.yml): Builds on `ubuntu-latest` with GTK3/Ninja, creates `SovereignAI-1.0.0-linux-x64.tar.gz`, and generates SHA-256 hashes.
-- [`.github/workflows/release-ios.yml`](.github/workflows/release-ios.yml): Builds on `macos-14`, signs with repository secrets (or packages unsigned IPA for TestFlight/AltStore).
 
 ---
 
@@ -291,7 +272,8 @@ Continuous Integration and Release packaging are automated with GitHub Actions:
 
 ```text
 sovereign_ai/
-├── .github/workflows/         # CI/CD Workflows (Windows, Linux, iOS)
+├── media/                     # Project banners and visual assets
+├── .github/workflows/         # Automated release workflows (Windows, Linux, iOS)
 ├── android/                   # Android native platform files (ARM64 / Gradle)
 ├── ios/                       # iOS native platform files (Xcode / SPM / iOS 16.4+)
 ├── macos/                     # macOS native platform files (Metal / App Sandbox)
@@ -323,7 +305,6 @@ sovereign_ai/
 │   │   └── shell/             # Navigation drawer and responsive shell
 │   └── main.dart              # Dependency injection & application entry point
 ├── test/                      # 65 Unit, integration & benchmark tests
-├── pubspec.yaml               # Project dependencies and asset declarations
 └── RELEASES.md                # Release artifacts manifest and verification hashes
 ```
 
