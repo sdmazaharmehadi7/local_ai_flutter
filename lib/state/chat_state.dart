@@ -1,20 +1,19 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
+import '../models/generation_settings.dart';
+import '../services/inference_service.dart';
 
 class ChatState extends ChangeNotifier {
   final List<ChatSession> _sessions = [];
   String? _activeSessionId;
   bool _isGenerating = false;
+  StreamSubscription<String>? _generationSubscription;
 
   List<ChatSession> get sessions => List.unmodifiable(_sessions);
   bool get isGenerating => _isGenerating;
   String? get activeSessionId => _activeSessionId;
-
-  void setGenerating(bool generating) {
-    _isGenerating = generating;
-    notifyListeners();
-  }
 
   ChatSession? get activeSession {
     if (_activeSessionId == null) return null;
@@ -56,58 +55,193 @@ class ChatState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Sends a user message. Because local inference engine is not wired yet,
-  /// this records the user message and appends an explicit system status notice
-  /// rather than generating simulated or fake AI replies.
-  void submitUserMessage(String content, {required bool hasModelLoaded}) {
-    if (content.trim().isEmpty) return;
+  Future<void> sendMessage(
+    String content, {
+    required IInferenceService inferenceService,
+    required GenerationSettings settings,
+  }) async {
+    final cleanContent = content.trim();
+    if (cleanContent.isEmpty || _isGenerating) return;
 
     if (activeSession == null) {
-      createNewChat(initialTitle: _deriveTitle(content));
+      createNewChat(initialTitle: _deriveTitle(cleanContent));
     }
 
-    final now = DateTime.now();
     final currentSession = activeSession!;
+    final now = DateTime.now();
+
+    // 1. Append user message
     final userMessage = ChatMessage(
       id: 'msg_user_${now.millisecondsSinceEpoch}',
       role: MessageRole.user,
-      content: content.trim(),
+      content: cleanContent,
       timestamp: now,
       status: MessageStatus.sent,
     );
 
     final updatedMessages = List<ChatMessage>.from(currentSession.messages)..add(userMessage);
 
-    // If session title was generic, update with first message excerpt
     String newTitle = currentSession.title;
     if (currentSession.messages.isEmpty && currentSession.title == 'New Conversation') {
-      newTitle = _deriveTitle(content);
+      newTitle = _deriveTitle(cleanContent);
     }
 
-    // Append system message informing the user about the engine status
-    if (!hasModelLoaded) {
+    // 2. If model is NOT loaded, add an honest system notice without fake AI response
+    if (!inferenceService.isLoaded) {
       final systemNotice = ChatMessage(
         id: 'msg_sys_${now.millisecondsSinceEpoch + 1}',
         role: MessageRole.system,
         content:
-            'Inference Engine Offline: No local GGUF model is loaded into memory. Download and load a model from the Model Manager to generate offline responses.',
+            'Inference Engine Offline: No local GGUF model is loaded into memory. Load a model in the Model Manager to generate real offline responses.',
         timestamp: DateTime.now(),
         status: MessageStatus.sent,
       );
       updatedMessages.add(systemNotice);
+
+      _updateSession(
+        currentSession.copyWith(
+          title: newTitle,
+          updatedAt: DateTime.now(),
+          messages: updatedMessages,
+        ),
+      );
+      return;
     }
 
-    final updatedSession = currentSession.copyWith(
-      title: newTitle,
-      updatedAt: DateTime.now(),
-      messages: updatedMessages,
+    // 3. Model IS loaded: Start real streaming inference
+    final assistantMessageId = 'msg_ast_${now.millisecondsSinceEpoch + 2}';
+    final assistantPlaceholder = ChatMessage(
+      id: assistantMessageId,
+      role: MessageRole.assistant,
+      content: '',
+      timestamp: DateTime.now(),
+      status: MessageStatus.generating,
     );
 
-    final index = _sessions.indexWhere((s) => s.id == currentSession.id);
-    if (index != -1) {
-      _sessions[index] = updatedSession;
+    updatedMessages.add(assistantPlaceholder);
+    _updateSession(
+      currentSession.copyWith(
+        title: newTitle,
+        updatedAt: DateTime.now(),
+        messages: updatedMessages,
+      ),
+    );
+
+    _isGenerating = true;
+    notifyListeners();
+
+    final buffer = StringBuffer();
+    final completer = Completer<void>();
+
+    try {
+      final tokenStream = inferenceService.generate(
+        messages: updatedMessages.sublist(0, updatedMessages.length - 1),
+        settings: settings,
+      );
+
+      _generationSubscription = tokenStream.listen(
+        (token) {
+          buffer.write(token);
+          _updateAssistantContent(
+            assistantMessageId,
+            buffer.toString(),
+            status: MessageStatus.generating,
+          );
+        },
+        onError: (Object error) {
+          final errorMsg = error is InferenceException
+              ? error.message
+              : 'Inference encountered an error during generation.';
+          _updateAssistantContent(
+            assistantMessageId,
+            buffer.isNotEmpty
+                ? '${buffer.toString()}\n\n[Inference interrupted: $errorMsg]'
+                : '[Error: $errorMsg]',
+            status: MessageStatus.error,
+            errorMessage: errorMsg,
+          );
+          if (!completer.isCompleted) completer.complete();
+        },
+        onDone: () {
+          _updateAssistantContent(
+            assistantMessageId,
+            buffer.toString().trim(),
+            status: MessageStatus.sent,
+          );
+          if (!completer.isCompleted) completer.complete();
+        },
+        cancelOnError: true,
+      );
+
+      await completer.future;
+    } catch (e) {
+      final errorMsg = e is InferenceException
+          ? e.message
+          : 'Failed to generate response on local hardware.';
+      _updateAssistantContent(
+        assistantMessageId,
+        '[Error: $errorMsg]',
+        status: MessageStatus.error,
+        errorMessage: errorMsg,
+      );
+    } finally {
+      _isGenerating = false;
+      _generationSubscription = null;
+      notifyListeners();
+    }
+  }
+
+  Future<void> stopGeneration({required IInferenceService inferenceService}) async {
+    if (!_isGenerating) return;
+
+    await inferenceService.stopGeneration();
+    await _generationSubscription?.cancel();
+    _generationSubscription = null;
+    _isGenerating = false;
+
+    // Mark active generating message as stopped
+    if (activeSession != null) {
+      final messages = List<ChatMessage>.from(activeSession!.messages);
+      final lastIdx = messages.indexWhere((m) => m.status == MessageStatus.generating);
+      if (lastIdx != -1) {
+        final lastMsg = messages[lastIdx];
+        messages[lastIdx] = lastMsg.copyWith(
+          content: lastMsg.content.trim().isNotEmpty
+              ? '${lastMsg.content.trim()} [Stopped]'
+              : '[Generation stopped by user]',
+          status: MessageStatus.sent,
+        );
+        _updateSession(activeSession!.copyWith(messages: messages));
+      }
     }
 
+    notifyListeners();
+  }
+
+  void _updateAssistantContent(
+    String messageId,
+    String content, {
+    required MessageStatus status,
+    String? errorMessage,
+  }) {
+    if (activeSession == null) return;
+    final messages = List<ChatMessage>.from(activeSession!.messages);
+    final idx = messages.indexWhere((m) => m.id == messageId);
+    if (idx != -1) {
+      messages[idx] = messages[idx].copyWith(
+        content: content,
+        status: status,
+        errorMessage: errorMessage,
+      );
+      _updateSession(activeSession!.copyWith(messages: messages));
+    }
+  }
+
+  void _updateSession(ChatSession session) {
+    final idx = _sessions.indexWhere((s) => s.id == session.id);
+    if (idx != -1) {
+      _sessions[idx] = session;
+    }
     notifyListeners();
   }
 
@@ -115,5 +249,11 @@ class ChatState extends ChangeNotifier {
     final clean = text.replaceAll('\n', ' ').trim();
     if (clean.length <= 32) return clean;
     return '${clean.substring(0, 32)}...';
+  }
+
+  @override
+  void dispose() {
+    _generationSubscription?.cancel();
+    super.dispose();
   }
 }

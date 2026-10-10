@@ -24,6 +24,7 @@ class LocalModel {
   final ModelDownloadStatus downloadStatus;
   final ModelLoadStatus loadStatus;
   final double downloadProgress; // 0.0 to 1.0
+  final String? localPath;
 
   const LocalModel({
     required this.id,
@@ -38,6 +39,7 @@ class LocalModel {
     this.downloadStatus = ModelDownloadStatus.notDownloaded,
     this.loadStatus = ModelLoadStatus.unloaded,
     this.downloadProgress = 0.0,
+    this.localPath,
   });
 
   LocalModel copyWith({
@@ -53,6 +55,7 @@ class LocalModel {
     ModelDownloadStatus? downloadStatus,
     ModelLoadStatus? loadStatus,
     double? downloadProgress,
+    String? localPath,
   }) {
     return LocalModel(
       id: id ?? this.id,
@@ -67,6 +70,7 @@ class LocalModel {
       downloadStatus: downloadStatus ?? this.downloadStatus,
       loadStatus: loadStatus ?? this.loadStatus,
       downloadProgress: downloadProgress ?? this.downloadProgress,
+      localPath: localPath ?? this.localPath,
     );
   }
 }

@@ -3,12 +3,14 @@ import 'package:flutter/services.dart';
 
 class ChatInputBar extends StatefulWidget {
   final ValueChanged<String> onSend;
+  final VoidCallback? onStop;
   final bool isGenerating;
   final bool hasModelLoaded;
 
   const ChatInputBar({
     super.key,
     required this.onSend,
+    this.onStop,
     this.isGenerating = false,
     this.hasModelLoaded = false,
   });
@@ -101,21 +103,20 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
-                  onPressed: (_hasText && !widget.isGenerating)
-                      ? _handleSend
-                      : null,
-                  tooltip: _hasText ? 'Send message' : 'Type to send',
-                  icon: widget.isGenerating
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.onPrimary,
-                            ),
-                          ),
+                  style: widget.isGenerating
+                      ? IconButton.styleFrom(
+                          backgroundColor: theme.colorScheme.error,
+                          foregroundColor: theme.colorScheme.onError,
                         )
+                      : null,
+                  onPressed: widget.isGenerating
+                      ? widget.onStop
+                      : (_hasText ? _handleSend : null),
+                  tooltip: widget.isGenerating
+                      ? 'Stop generation'
+                      : (_hasText ? 'Send message' : 'Type to send'),
+                  icon: widget.isGenerating
+                      ? const Icon(Icons.stop_rounded, size: 20)
                       : const Icon(Icons.arrow_upward_rounded, size: 20),
                 ),
               ],

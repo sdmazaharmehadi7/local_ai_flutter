@@ -19,7 +19,8 @@ class SovereignApp extends StatefulWidget {
   State<SovereignApp> createState() => _SovereignAppState();
 }
 
-class _SovereignAppState extends State<SovereignApp> {
+class _SovereignAppState extends State<SovereignApp>
+    with WidgetsBindingObserver {
   late final SettingsState _settingsState;
   late final ModelState _modelState;
   late final ChatState _chatState;
@@ -27,16 +28,31 @@ class _SovereignAppState extends State<SovereignApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _settingsState = SettingsState();
     _modelState = ModelState();
     _chatState = ChatState();
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      // Safe lifecycle handling: stop in-flight native generation when app goes to background
+      if (_chatState.isGenerating) {
+        _chatState.stopGeneration(
+          inferenceService: _modelState.inferenceService,
+        );
+      }
+    }
+  }
+
+  @override
   void dispose() {
-    _settingsState.dispose();
-    _modelState.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     _chatState.dispose();
+    _modelState.dispose();
+    _settingsState.dispose();
     super.dispose();
   }
 

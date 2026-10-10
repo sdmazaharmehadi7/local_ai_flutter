@@ -95,14 +95,51 @@ class MessageBubble extends StatelessWidget {
                   width: 1,
                 ),
               ),
-              child: SelectableText(
-                message.content,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isUser
-                      ? theme.colorScheme.onPrimary
-                      : theme.colorScheme.onSurface,
-                  height: 1.45,
-                ),
+              child: Builder(
+                builder: (context) {
+                  if (message.status == MessageStatus.generating &&
+                      message.content.isEmpty) {
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Thinking locally...',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  final displayText = message.status == MessageStatus.generating
+                      ? '${message.content} ▌'
+                      : message.content;
+
+                  return SelectableText(
+                    displayText,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: isUser
+                          ? theme.colorScheme.onPrimary
+                          : (message.status == MessageStatus.error
+                              ? theme.colorScheme.error
+                              : theme.colorScheme.onSurface),
+                      height: 1.45,
+                    ),
+                  );
+                },
               ),
             ),
           ),

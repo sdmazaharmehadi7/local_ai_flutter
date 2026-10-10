@@ -21,7 +21,7 @@ void main() {
     await tester.tap(find.text('Models'));
     await tester.pumpAndSettle();
     expect(find.text('Model Manager'), findsOneWidget);
-    expect(find.text('Qwen 2.5 1.5B Instruct'), findsOneWidget);
+    expect(find.text('SmolLM2 135M Instruct'), findsOneWidget);
 
     // Navigate to History
     await tester.tap(find.text('History'));

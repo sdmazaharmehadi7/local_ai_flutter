@@ -4,35 +4,19 @@ import '../../common/status_badge.dart';
 
 class ModelCard extends StatelessWidget {
   final LocalModel model;
-  final VoidCallback? onInfoTap;
+  final VoidCallback? onLoad;
+  final VoidCallback? onUnload;
+  final VoidCallback? onPickLocal;
+  final bool isLoading;
 
   const ModelCard({
     super.key,
     required this.model,
-    this.onInfoTap,
+    this.onLoad,
+    this.onUnload,
+    this.onPickLocal,
+    this.isLoading = false,
   });
-
-  void _showPendingDialog(BuildContext context, String actionName) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('$actionName: Coming in Phase 2'),
-        content: Text(
-          'Model downloading, verification, and llama.cpp native engine loading are '
-          'part of the upcoming inference engine integration phase.\n\n'
-          'Target model: ${model.name}\n'
-          'Disk file: ${model.filename}\n'
-          'Estimated RAM: ${model.estimatedRamGb} GB',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Understood'),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,11 +40,25 @@ class ModelCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        model.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              model.name,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (isLoaded) ...[
+                            const SizedBox(width: 8),
+                            StatusBadge(
+                              icon: Icons.check_circle,
+                              label: 'Active Model',
+                              color: Colors.green,
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -98,8 +96,8 @@ class ModelCard extends StatelessWidget {
                   isOutlined: true,
                 ),
                 StatusBadge(
-                  icon: isDownloaded ? Icons.check_circle_outline : Icons.cloud_outlined,
-                  label: isDownloaded ? 'Downloaded' : 'Not Downloaded',
+                  icon: isDownloaded ? Icons.check_circle_outline : Icons.insert_drive_file_outlined,
+                  label: isDownloaded ? 'File Located' : 'Local File Required',
                   color: isDownloaded ? Colors.green : theme.colorScheme.outline,
                 ),
                 StatusBadge(
@@ -113,23 +111,45 @@ class ModelCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                OutlinedButton.icon(
-                  onPressed: () => _showPendingDialog(context, 'Model Download'),
-                  icon: const Icon(Icons.download_rounded, size: 16),
-                  label: const Text('Download [Phase 2]'),
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
+                if (!isLoaded && model.localPath == null)
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : onPickLocal,
+                    icon: const Icon(Icons.file_open_outlined, size: 16),
+                    label: const Text('Locate .gguf File'),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                FilledButton.tonalIcon(
-                  onPressed: () => _showPendingDialog(context, 'Engine Loading'),
-                  icon: const Icon(Icons.bolt, size: 16),
-                  label: const Text('Load [Phase 2]'),
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
+                if (!isLoaded && model.localPath != null) ...[
+                  OutlinedButton.icon(
+                    onPressed: isLoading ? null : onPickLocal,
+                    icon: const Icon(Icons.folder_open_outlined, size: 16),
+                    label: const Text('Change File'),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  FilledButton.tonalIcon(
+                    onPressed: isLoading ? null : onLoad,
+                    icon: const Icon(Icons.bolt, size: 16),
+                    label: const Text('Load into RAM'),
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
+                if (isLoaded)
+                  FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: theme.colorScheme.errorContainer,
+                      foregroundColor: theme.colorScheme.onErrorContainer,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: isLoading ? null : onUnload,
+                    icon: const Icon(Icons.stop_circle_outlined, size: 16),
+                    label: const Text('Unload from Memory'),
+                  ),
               ],
             ),
           ],
