@@ -107,6 +107,8 @@ class ModelState extends ChangeNotifier {
     int contextWindow = 2048,
     bool useGpu = true,
   }) async {
+    if (_isLoading) return false;
+
     _isLoading = true;
     _loadingMessage = 'Loading model weights and initializing inference context...';
     _errorMessage = null;
@@ -125,6 +127,13 @@ class ModelState extends ChangeNotifier {
           : filePath;
       final fileSizeBytes = file.existsSync() ? file.lengthSync() : 0;
       final diskSizeGb = (fileSizeBytes / (1024 * 1024 * 1024));
+
+      // Reset any previous model's loaded status
+      for (int i = 0; i < _models.length; i++) {
+        if (_models[i].loadStatus == ModelLoadStatus.loaded) {
+          _models[i] = _models[i].copyWith(loadStatus: ModelLoadStatus.unloaded);
+        }
+      }
 
       // Check if matches known presets or create new custom imported entry
       final existingIndex = _models.indexWhere(
@@ -161,16 +170,32 @@ class ModelState extends ChangeNotifier {
       notifyListeners();
       return true;
     } on InferenceException catch (e) {
+      try {
+        await _inferenceService.unloadModel();
+      } catch (_) {}
       _errorMessage = e.message;
       _activeModel = null;
+      for (int i = 0; i < _models.length; i++) {
+        if (_models[i].loadStatus == ModelLoadStatus.loaded) {
+          _models[i] = _models[i].copyWith(loadStatus: ModelLoadStatus.unloaded);
+        }
+      }
       _isLoading = false;
       _loadingMessage = null;
       notifyListeners();
       return false;
     } catch (e) {
+      try {
+        await _inferenceService.unloadModel();
+      } catch (_) {}
       _errorMessage =
           'An unexpected error occurred while loading the model: ${e.toString().split('\n').first}';
       _activeModel = null;
+      for (int i = 0; i < _models.length; i++) {
+        if (_models[i].loadStatus == ModelLoadStatus.loaded) {
+          _models[i] = _models[i].copyWith(loadStatus: ModelLoadStatus.unloaded);
+        }
+      }
       _isLoading = false;
       _loadingMessage = null;
       notifyListeners();
@@ -179,19 +204,20 @@ class ModelState extends ChangeNotifier {
   }
 
   Future<void> unloadActiveModel() async {
+    if (_isLoading) return;
+
     _isLoading = true;
     _loadingMessage = 'Unloading model and releasing native memory buffers...';
     notifyListeners();
 
     try {
       await _inferenceService.unloadModel();
-      if (_activeModel != null) {
-        final index = _models.indexWhere((m) => m.id == _activeModel!.id);
-        if (index != -1) {
-          _models[index] = _models[index].copyWith(loadStatus: ModelLoadStatus.unloaded);
+      for (int i = 0; i < _models.length; i++) {
+        if (_models[i].loadStatus == ModelLoadStatus.loaded) {
+          _models[i] = _models[i].copyWith(loadStatus: ModelLoadStatus.unloaded);
         }
-        _activeModel = null;
       }
+      _activeModel = null;
     } finally {
       _isLoading = false;
       _loadingMessage = null;

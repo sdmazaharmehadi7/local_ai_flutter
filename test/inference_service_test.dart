@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sovereign_ai/models/chat_message.dart';
 import 'package:sovereign_ai/models/generation_settings.dart';
+import 'package:sovereign_ai/models/local_model.dart';
 import 'package:sovereign_ai/services/inference_service.dart';
 import 'package:sovereign_ai/state/chat_state.dart';
 import 'package:sovereign_ai/state/model_state.dart';
@@ -31,6 +33,7 @@ class FakeInferenceService implements IInferenceService {
     int contextWindow = 2048,
     bool useGpu = true,
   }) async {
+    await unloadModel();
     if (!filePath.endsWith('.gguf')) {
       throw const InferenceException('Invalid file format: must end with .gguf');
     }
@@ -127,6 +130,29 @@ void main() {
       );
     });
 
+    test('rejects non-GGUF files with invalid magic header bytes', () async {
+      final tempDir = await Directory.systemTemp.createTemp('gguf_header_test_');
+      final fakeGguf = File('${tempDir.path}/fake_model.gguf');
+      // Create a 1MB+ file that lacks GGUF magic bytes (simulating HTML or corrupted download)
+      await fakeGguf.writeAsString('<!DOCTYPE html><html>404 Not Found</html>' * 40000);
+
+      final service = LocalInferenceService();
+      try {
+        expect(
+          () => service.loadModel(fakeGguf.path),
+          throwsA(
+            predicate<InferenceException>(
+              (e) => e.message.contains('magic bytes'),
+            ),
+          ),
+        );
+      } finally {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      }
+    });
+
     test('throws when generating without loaded model', () {
       final service = LocalInferenceService();
       expect(
@@ -170,6 +196,26 @@ void main() {
       expect(modelState.hasLoadedModel, isFalse);
       expect(modelState.activeModel, isNull);
     });
+
+    test('resets all models loadStatus to unloaded when subsequent load fails', () async {
+      final modelState = ModelState(inferenceService: FakeInferenceService());
+      // First load succeeds
+      await modelState.loadLocalModelFile('/valid/SmolLM2-135M-Instruct-Q4_K_M.gguf');
+      expect(modelState.hasLoadedModel, isTrue);
+      expect(modelState.activeModel, isNotNull);
+
+      // Second load fails with invalid file
+      final success = await modelState.loadLocalModelFile('/invalid_path/bad.txt');
+      expect(success, isFalse);
+      expect(modelState.hasLoadedModel, isFalse);
+      expect(modelState.activeModel, isNull);
+
+      // Verify no model in list is left in loaded state
+      final loadedCount = modelState.models
+          .where((m) => m.loadStatus == ModelLoadStatus.loaded)
+          .length;
+      expect(loadedCount, 0);
+    });
   });
 
   group('ChatState streaming and cancellation tests', () {
@@ -198,30 +244,61 @@ void main() {
       expect(session.messages[1].status, MessageStatus.sent);
     });
 
-    test('stopping generation marks message as stopped', () async {
+    test('stopping generation marks message as stopped and completes future', () async {
       final fakeService = FakeInferenceService();
       await fakeService.loadModel('/valid/test.gguf');
 
       final chatState = ChatState();
 
-      // Start message without awaiting completion
-      unawaited(
-        chatState.sendMessage(
-          'Long prompt',
-          inferenceService: fakeService,
-          settings: const GenerationSettings(),
-        ),
+      // Start message and ensure future completes cleanly within timeout
+      final sendFuture = chatState.sendMessage(
+        'Long prompt',
+        inferenceService: fakeService,
+        settings: const GenerationSettings(),
       );
 
       // Give it 1 tick then stop
       await Future.delayed(const Duration(milliseconds: 15));
       await chatState.stopGeneration(inferenceService: fakeService);
 
+      // sendFuture must resolve cleanly without timeout/hang
+      await sendFuture.timeout(const Duration(seconds: 2));
+
       final session = chatState.activeSession;
       expect(session, isNotNull);
       final lastMsg = session!.messages.last;
       expect(lastMsg.status, MessageStatus.sent);
       expect(chatState.isGenerating, isFalse);
+    });
+
+    test('ignores concurrent sendMessage while generation is in progress', () async {
+      final fakeService = FakeInferenceService();
+      await fakeService.loadModel('/valid/test.gguf');
+
+      final chatState = ChatState();
+
+      final firstSend = chatState.sendMessage(
+        'First prompt',
+        inferenceService: fakeService,
+        settings: const GenerationSettings(),
+      );
+
+      // Attempt second send immediately while first is actively generating
+      await chatState.sendMessage(
+        'Second prompt (should be ignored)',
+        inferenceService: fakeService,
+        settings: const GenerationSettings(),
+      );
+
+      await firstSend;
+
+      final session = chatState.activeSession;
+      expect(session, isNotNull);
+      // Only 1 user message and 1 assistant message should exist
+      final userMessages =
+          session!.messages.where((m) => m.role == MessageRole.user).toList();
+      expect(userMessages.length, 1);
+      expect(userMessages.first.content, 'First prompt');
     });
   });
 }

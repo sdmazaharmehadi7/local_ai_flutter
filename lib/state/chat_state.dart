@@ -14,6 +14,7 @@ class ChatState extends ChangeNotifier {
   bool _isGenerating = false;
   StreamSubscription<String>? _generationSubscription;
   Timer? _debounceTimer;
+  Completer<void>? _generationCompleter;
 
   ChatState({this.storageService});
 
@@ -114,7 +115,11 @@ class ChatState extends ChangeNotifier {
     required GenerationSettings settings,
   }) async {
     final cleanContent = content.trim();
-    if (cleanContent.isEmpty || _isGenerating) return;
+    if (cleanContent.isEmpty ||
+        _isGenerating ||
+        inferenceService.isGenerating) {
+      return;
+    }
 
     if (activeSession == null) {
       createNewChat(
@@ -196,6 +201,7 @@ class ChatState extends ChangeNotifier {
 
     final buffer = StringBuffer();
     final completer = Completer<void>();
+    _generationCompleter = completer;
 
     try {
       final tokenStream = inferenceService.generate(
@@ -229,6 +235,7 @@ class ChatState extends ChangeNotifier {
           );
           _persist();
           if (!completer.isCompleted) completer.complete();
+          _generationCompleter = null;
         },
         onDone: () {
           _cancelDebouncedPersistence();
@@ -239,6 +246,7 @@ class ChatState extends ChangeNotifier {
           );
           _persist();
           if (!completer.isCompleted) completer.complete();
+          _generationCompleter = null;
         },
         cancelOnError: true,
       );
@@ -256,9 +264,12 @@ class ChatState extends ChangeNotifier {
         errorMessage: errorMsg,
       );
       _persist();
+      if (!completer.isCompleted) completer.complete();
+      _generationCompleter = null;
     } finally {
       _isGenerating = false;
       _generationSubscription = null;
+      _generationCompleter = null;
       notifyListeners();
     }
   }
@@ -269,6 +280,10 @@ class ChatState extends ChangeNotifier {
     await inferenceService.stopGeneration();
     await _generationSubscription?.cancel();
     _generationSubscription = null;
+    if (!(_generationCompleter?.isCompleted ?? true)) {
+      _generationCompleter?.complete();
+    }
+    _generationCompleter = null;
     _cancelDebouncedPersistence();
     _isGenerating = false;
 
@@ -349,6 +364,10 @@ class ChatState extends ChangeNotifier {
   void dispose() {
     _cancelDebouncedPersistence();
     _generationSubscription?.cancel();
+    if (!(_generationCompleter?.isCompleted ?? true)) {
+      _generationCompleter?.complete();
+    }
+    _generationCompleter = null;
     super.dispose();
   }
 }

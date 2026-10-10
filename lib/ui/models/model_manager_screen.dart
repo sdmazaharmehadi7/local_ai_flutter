@@ -12,6 +12,8 @@ class ModelManagerScreen extends StatelessWidget {
     final modelState = AppScope.modelOf(context);
     final settingsState = AppScope.settingsOf(context);
 
+    if (modelState.isLoading) return;
+
     if (kIsWeb) {
       _showDialog(
         context,

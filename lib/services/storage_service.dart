@@ -323,3 +323,76 @@ class LocalFileStorageService implements IStorageService {
     }
   }
 }
+
+class InMemoryStorageService implements IStorageService {
+  final List<ChatSession> _sessions = [];
+  String? _activeSessionId;
+  ThemeMode _themeMode = ThemeMode.dark;
+  GenerationSettings _settings = const GenerationSettings();
+  String? _lastLoadedModelPath;
+
+  @override
+  String? get storageDirectoryPath => 'Browser In-Memory Storage (Web)';
+
+  @override
+  Future<void> init() async {}
+
+  @override
+  Future<void> saveConversations(
+    List<ChatSession> sessions, {
+    String? activeSessionId,
+  }) async {
+    _sessions.clear();
+    _sessions.addAll(sessions);
+    _activeSessionId = activeSessionId;
+  }
+
+  @override
+  Future<({List<ChatSession> sessions, String? activeSessionId})>
+      loadConversations() async {
+    return (
+      sessions: List<ChatSession>.from(_sessions),
+      activeSessionId: _activeSessionId,
+    );
+  }
+
+  @override
+  Future<void> saveSettings({
+    required ThemeMode themeMode,
+    required GenerationSettings settings,
+    String? lastLoadedModelPath,
+  }) async {
+    _themeMode = themeMode;
+    _settings = settings;
+    _lastLoadedModelPath = lastLoadedModelPath;
+  }
+
+  @override
+  Future<
+      ({
+        ThemeMode themeMode,
+        GenerationSettings settings,
+        String? lastLoadedModelPath,
+      })?> loadSettings() async {
+    return (
+      themeMode: _themeMode,
+      settings: _settings,
+      lastLoadedModelPath: _lastLoadedModelPath,
+    );
+  }
+
+  @override
+  Future<void> clearAllChatData() async {
+    _sessions.clear();
+    _activeSessionId = null;
+  }
+
+  @override
+  Future<void> clearAll() async {
+    _sessions.clear();
+    _activeSessionId = null;
+    _themeMode = ThemeMode.dark;
+    _settings = const GenerationSettings();
+    _lastLoadedModelPath = null;
+  }
+}

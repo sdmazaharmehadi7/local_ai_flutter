@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:io' show File;
+import 'dart:io'
+    show File, FileMode, FileSystemEntity, RandomAccessFile;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:llamadart/llamadart.dart';
 import '../models/chat_message.dart';
@@ -73,9 +74,9 @@ class LocalInferenceService implements IInferenceService {
     }
 
     final file = File(trimmedPath);
-    if (!file.existsSync()) {
+    if (!file.existsSync() || !FileSystemEntity.isFileSync(trimmedPath)) {
       throw const InferenceException(
-        'Selected model file could not be found. Please verify the file exists.',
+        'Selected model file could not be found or is not a regular file.',
       );
     }
 
@@ -84,6 +85,33 @@ class LocalInferenceService implements IInferenceService {
       throw const InferenceException(
         'The selected file is too small to be a valid GGUF model.',
       );
+    }
+
+    // Validate GGUF file format magic header bytes (0x47, 0x47, 0x55, 0x46 / "GGUF")
+    // to reject corrupt, truncated, HTML 404, or Git LFS pointer files before invoking native code.
+    RandomAccessFile? raf;
+    try {
+      raf = file.openSync(mode: FileMode.read);
+      final header = raf.readSync(4);
+      if (header.length < 4 ||
+          header[0] != 0x47 || // 'G'
+          header[1] != 0x47 || // 'G'
+          header[2] != 0x55 || // 'U'
+          header[3] != 0x46) { // 'F'
+        throw const InferenceException(
+          'Corrupted or invalid GGUF file header. The file does not contain valid GGUF magic bytes (may be an incomplete download or HTML error page).',
+        );
+      }
+    } on InferenceException {
+      rethrow;
+    } catch (e) {
+      throw InferenceException(
+        'Unable to read model file: ${e.toString().split('\n').first}',
+      );
+    } finally {
+      try {
+        raf?.closeSync();
+      } catch (_) {}
     }
 
     // Release any previously loaded model to enforce strict single-model memory safety
@@ -264,15 +292,15 @@ class LocalInferenceService implements IInferenceService {
 
   @override
   Future<void> stopGeneration() async {
-    if (_activeSubscription != null) {
-      try {
+    try {
+      if (_activeSubscription != null) {
         await _activeSubscription!.cancel();
-      } catch (_) {
-        // Safe cancellation
-      } finally {
-        _activeSubscription = null;
-        _isGenerating = false;
       }
+    } catch (_) {
+      // Safe cancellation
+    } finally {
+      _activeSubscription = null;
+      _isGenerating = false;
     }
   }
 

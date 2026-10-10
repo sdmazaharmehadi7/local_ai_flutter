@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
@@ -10,7 +11,8 @@ import 'ui/shell/app_shell.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final storageService = LocalFileStorageService();
+  final IStorageService storageService =
+      kIsWeb ? InMemoryStorageService() : LocalFileStorageService();
   await storageService.init();
   runApp(SovereignApp(storageService: storageService));
 }
@@ -35,7 +37,8 @@ class _SovereignAppState extends State<SovereignApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _storageService = widget.storageService ?? LocalFileStorageService();
+    _storageService = widget.storageService ??
+        (kIsWeb ? InMemoryStorageService() : LocalFileStorageService());
     _settingsState = SettingsState(storageService: _storageService);
     _modelState = ModelState();
     _chatState = ChatState(storageService: _storageService);
@@ -49,7 +52,7 @@ class _SovereignAppState extends State<SovereignApp>
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       // Safe lifecycle handling: stop in-flight native generation when app goes to background
-      if (_chatState.isGenerating) {
+      if (_chatState.isGenerating || _modelState.inferenceService.isGenerating) {
         _chatState.stopGeneration(
           inferenceService: _modelState.inferenceService,
         );

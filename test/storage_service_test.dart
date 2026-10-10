@@ -251,4 +251,43 @@ void main() {
       settings2.dispose();
     });
   });
+
+  group('InMemoryStorageService tests (Web compatibility)', () {
+    test('stores and loads conversations in memory without filesystem',
+        () async {
+      final webStorage = InMemoryStorageService();
+      await webStorage.init();
+
+      final session = ChatSession(
+        id: 'web_sess_1',
+        title: 'Web Session',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        messages: [],
+      );
+
+      await webStorage.saveConversations([session], activeSessionId: 'web_sess_1');
+      final loaded = await webStorage.loadConversations();
+      expect(loaded.sessions.length, 1);
+      expect(loaded.activeSessionId, 'web_sess_1');
+
+      await webStorage.clearAllChatData();
+      final cleared = await webStorage.loadConversations();
+      expect(cleared.sessions, isEmpty);
+      expect(cleared.activeSessionId, isNull);
+    });
+
+    test('stores and loads settings in memory', () async {
+      final webStorage = InMemoryStorageService();
+      await webStorage.saveSettings(
+        themeMode: ThemeMode.light,
+        settings: const GenerationSettings(temperature: 0.2),
+      );
+
+      final loaded = await webStorage.loadSettings();
+      expect(loaded, isNotNull);
+      expect(loaded!.themeMode, ThemeMode.light);
+      expect(loaded.settings.temperature, 0.2);
+    });
+  });
 }
