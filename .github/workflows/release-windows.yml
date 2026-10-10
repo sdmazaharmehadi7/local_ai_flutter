@@ -65,26 +65,26 @@ jobs:
           Copy-Item -Path "$releaseDir/*" -Destination $packageDir -Recurse
 
           # Add installation and offline operation README
-          $readmeContent = @"
-Sovereign AI for Windows (x64)
-Version: 1.0.0
-==============================
-
-SYSTEM REQUIREMENTS:
-- Windows 10 (version 1809 or higher) or Windows 11 (64-bit)
-- 4GB RAM minimum (8GB+ recommended for 1B-3B models)
-- AVX2-capable x86_64 CPU
-
-HOW TO RUN:
-1. Extract all files to a folder of your choice (e.g. C:\Apps\SovereignAI).
-2. Double-click sovereign_ai.exe to launch.
-3. Open the Model Manager tab to download or import your local GGUF models.
-4. For Neural RAG, download the 23MB all-MiniLM-L6-v2 model directly inside the app.
-
-100% PRIVATE & OFFLINE:
-No data, documents, questions, or embeddings are ever sent to any cloud server.
-"@
-          Set-Content -Path "$packageDir/README.txt" -Value $readmeContent
+          $readmeLines = @(
+            "Sovereign AI for Windows (x64)",
+            "Version: 1.0.0",
+            "==============================",
+            "",
+            "SYSTEM REQUIREMENTS:",
+            "- Windows 10 (version 1809 or higher) or Windows 11 (64-bit)",
+            "- 4GB RAM minimum (8GB+ recommended for 1B-3B models)",
+            "- AVX2-capable x86_64 CPU",
+            "",
+            "HOW TO RUN:",
+            "1. Extract all files to a folder of your choice (e.g. C:\Apps\SovereignAI).",
+            "2. Double-click sovereign_ai.exe to launch.",
+            "3. Open the Model Manager tab to download or import your local GGUF models.",
+            "4. For Neural RAG, download the 23MB all-MiniLM-L6-v2 model directly inside the app.",
+            "",
+            "100% PRIVATE & OFFLINE:",
+            "No data, documents, questions, or embeddings are ever sent to any cloud server."
+          )
+          $readmeLines | Set-Content -Path "$packageDir/README.txt"
 
           # Compress into distribution zip
           Compress-Archive -Path "$packageDir/*" -DestinationPath "SovereignAI-1.0.0-windows-x64.zip" -Force

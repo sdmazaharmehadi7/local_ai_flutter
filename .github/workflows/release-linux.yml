@@ -77,28 +77,28 @@ jobs:
           mkdir -p "$PACKAGE_DIR"
           cp -r "$BUILD_DIR/"* "$PACKAGE_DIR/"
 
-          cat << 'EOF' > "$PACKAGE_DIR/README.txt"
-Sovereign AI for Linux (x64)
-Version: 1.0.0
-============================
-
-SYSTEM REQUIREMENTS:
-- Ubuntu 20.04+, Debian 11+, Fedora 36+, or compatible Linux distribution
-- 64-bit x86_64 CPU (AVX2 recommended)
-- 4GB RAM minimum (8GB+ recommended)
-- Standard GTK3 runtime libraries (libgtk-3-0)
-
-HOW TO RUN:
-1. Extract the tar.gz archive:
-   tar -xzf SovereignAI-1.0.0-linux-x64.tar.gz
-2. Run the executable:
-   ./sovereign_ai
-3. Manage and download offline GGUF models in the Model Manager tab.
-4. Download the 23MB all-MiniLM-L6-v2 embedding model for instant neural RAG.
-
-PRIVACY & OFFLINE GUARANTEE:
-Zero external servers or cloud inference. All operations run directly on your hardware.
-EOF
+          printf "%s\n" \
+            "Sovereign AI for Linux (x64)" \
+            "Version: 1.0.0" \
+            "============================" \
+            "" \
+            "SYSTEM REQUIREMENTS:" \
+            "- Ubuntu 20.04+, Debian 11+, Fedora 36+, or compatible Linux distribution" \
+            "- 64-bit x86_64 CPU (AVX2 recommended)" \
+            "- 4GB RAM minimum (8GB+ recommended)" \
+            "- Standard GTK3 runtime libraries (libgtk-3-0)" \
+            "" \
+            "HOW TO RUN:" \
+            "1. Extract the tar.gz archive:" \
+            "   tar -xzf SovereignAI-1.0.0-linux-x64.tar.gz" \
+            "2. Run the executable:" \
+            "   ./sovereign_ai" \
+            "3. Manage and download offline GGUF models in the Model Manager tab." \
+            "4. Download the 23MB all-MiniLM-L6-v2 embedding model for instant neural RAG." \
+            "" \
+            "PRIVACY & OFFLINE GUARANTEE:" \
+            "Zero external servers or cloud inference. All operations run directly on your hardware." \
+            > "$PACKAGE_DIR/README.txt"
 
           tar -czvf SovereignAI-1.0.0-linux-x64.tar.gz -C dist SovereignAI-1.0.0-linux-x64
           sha256sum SovereignAI-1.0.0-linux-x64.tar.gz > SovereignAI-1.0.0-linux-x64.tar.gz.sha256
