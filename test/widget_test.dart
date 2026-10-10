@@ -3,8 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sovereign_ai/main.dart';
 
 void main() {
-  testWidgets('SovereignApp renders brand and empty state on initial launch',
-      (WidgetTester tester) async {
+  testWidgets('SovereignApp renders brand and empty state on initial launch', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const SovereignApp());
     await tester.pumpAndSettle();
 
@@ -45,35 +46,38 @@ void main() {
   });
 
   testWidgets(
-      'Submitting a message without a loaded model warns user honestly without fake replies',
-      (WidgetTester tester) async {
-    await tester.pumpWidget(const SovereignApp());
-    await tester.pumpAndSettle();
+    'Submitting a message without a loaded model warns user honestly without fake replies',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(const SovereignApp());
+      await tester.pumpAndSettle();
 
-    // Type a prompt into the input bar
-    final textField = find.byType(TextField);
-    expect(textField, findsOneWidget);
-    await tester.enterText(textField, 'Hello Sovereign AI');
-    await tester.pumpAndSettle();
+      // Type a prompt into the input bar
+      final textField = find.byType(TextField);
+      expect(textField, findsOneWidget);
+      await tester.enterText(textField, 'Hello Sovereign AI');
+      await tester.pumpAndSettle();
 
-    // Tap send button
-    final sendButton = find.byTooltip('Send message');
-    expect(sendButton, findsOneWidget);
-    await tester.tap(sendButton);
-    await tester.pumpAndSettle();
+      // Tap send button
+      final sendButton = find.byTooltip('Send message');
+      expect(sendButton, findsOneWidget);
+      await tester.tap(sendButton);
+      await tester.pumpAndSettle();
 
-    // Verify user message is present
-    expect(
-      find.byWidgetPredicate(
-        (w) => w is SelectableText && w.data == 'Hello Sovereign AI',
-      ),
-      findsOneWidget,
-    );
+      // Verify user message is present
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is SelectableText && w.data == 'Hello Sovereign AI',
+        ),
+        findsOneWidget,
+      );
 
-    // Verify that NO fake AI response was generated and honest system notice was shown
-    expect(
-      find.textContaining('Inference Engine Offline: No local GGUF model is loaded'),
-      findsOneWidget,
-    );
-  });
+      // Verify that NO fake AI response was generated and honest system notice was shown
+      expect(
+        find.textContaining(
+          'Inference Engine Offline: No local GGUF model is loaded',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 }

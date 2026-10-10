@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../services/storage_service.dart';
 import 'chat_state.dart';
 import 'model_state.dart';
@@ -20,8 +21,8 @@ class AppScope extends InheritedWidget {
   });
 
   static AppScope of(BuildContext context) {
-    final AppScope? result =
-        context.dependOnInheritedWidgetOfExactType<AppScope>();
+    final AppScope? result = context
+        .dependOnInheritedWidgetOfExactType<AppScope>();
     assert(result != null, 'No AppScope found in context');
     return result!;
   }

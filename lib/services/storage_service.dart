@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
 import '../models/chat_session.dart';
 import '../models/generation_settings.dart';
+import '../models/local_model.dart';
 
 abstract class IStorageService {
   Future<void> init();
@@ -15,7 +18,7 @@ abstract class IStorageService {
   });
 
   Future<({List<ChatSession> sessions, String? activeSessionId})>
-      loadConversations();
+  loadConversations();
 
   Future<void> saveSettings({
     required ThemeMode themeMode,
@@ -24,11 +27,17 @@ abstract class IStorageService {
   });
 
   Future<
-      ({
-        ThemeMode themeMode,
-        GenerationSettings settings,
-        String? lastLoadedModelPath,
-      })?> loadSettings();
+    ({
+      ThemeMode themeMode,
+      GenerationSettings settings,
+      String? lastLoadedModelPath,
+    })?
+  >
+  loadSettings();
+
+  Future<void> saveCustomModels(List<LocalModel> models);
+
+  Future<List<LocalModel>> loadCustomModels();
 
   Future<void> clearAllChatData();
 
@@ -41,6 +50,7 @@ class LocalFileStorageService implements IStorageService {
   static const int currentSchemaVersion = 1;
   static const String _conversationsFileName = 'conversations.json';
   static const String _settingsFileName = 'settings.json';
+  static const String _modelsFileName = 'custom_models.json';
 
   final Directory? customBaseDirectory;
   Directory? _resolvedDirectory;
@@ -48,6 +58,7 @@ class LocalFileStorageService implements IStorageService {
 
   Future<void> _conversationsWriteQueue = Future.value();
   Future<void> _settingsWriteQueue = Future.value();
+  Future<void> _modelsWriteQueue = Future.value();
 
   LocalFileStorageService({this.customBaseDirectory});
 
@@ -66,7 +77,9 @@ class LocalFileStorageService implements IStorageService {
         _resolvedDirectory = Directory(p.join(appDocDir.path, 'sovereign_ai'));
       } catch (_) {
         // Fallback to system temp if documents directory is unavailable (e.g., in some test environments)
-        _resolvedDirectory = Directory(p.join(Directory.systemTemp.path, 'sovereign_ai'));
+        _resolvedDirectory = Directory(
+          p.join(Directory.systemTemp.path, 'sovereign_ai'),
+        );
       }
     }
 
@@ -101,7 +114,9 @@ class LocalFileStorageService implements IStorageService {
       final dir = await _ensureDirectory();
       final file = File(p.join(dir.path, _conversationsFileName));
       final nonce = DateTime.now().microsecondsSinceEpoch;
-      final tmpFile = File(p.join(dir.path, '$_conversationsFileName.$nonce.tmp'));
+      final tmpFile = File(
+        p.join(dir.path, '$_conversationsFileName.$nonce.tmp'),
+      );
 
       try {
         // Atomic write pattern: write to unique temporary file first, then replace target
@@ -119,14 +134,16 @@ class LocalFileStorageService implements IStorageService {
       }
     }
 
-    _conversationsWriteQueue = _conversationsWriteQueue
-        .then((_) => writeOp(), onError: (_) => writeOp());
+    _conversationsWriteQueue = _conversationsWriteQueue.then(
+      (_) => writeOp(),
+      onError: (_) => writeOp(),
+    );
     return _conversationsWriteQueue;
   }
 
   @override
   Future<({List<ChatSession> sessions, String? activeSessionId})>
-      loadConversations() async {
+  loadConversations() async {
     await _conversationsWriteQueue;
     final dir = await _ensureDirectory();
     final file = File(p.join(dir.path, _conversationsFileName));
@@ -202,18 +219,22 @@ class LocalFileStorageService implements IStorageService {
       }
     }
 
-    _settingsWriteQueue = _settingsWriteQueue
-        .then((_) => writeOp(), onError: (_) => writeOp());
+    _settingsWriteQueue = _settingsWriteQueue.then(
+      (_) => writeOp(),
+      onError: (_) => writeOp(),
+    );
     return _settingsWriteQueue;
   }
 
   @override
   Future<
-      ({
-        ThemeMode themeMode,
-        GenerationSettings settings,
-        String? lastLoadedModelPath,
-      })?> loadSettings() async {
+    ({
+      ThemeMode themeMode,
+      GenerationSettings settings,
+      String? lastLoadedModelPath,
+    })?
+  >
+  loadSettings() async {
     await _settingsWriteQueue;
     final dir = await _ensureDirectory();
     final file = File(p.join(dir.path, _settingsFileName));
@@ -278,8 +299,10 @@ class LocalFileStorageService implements IStorageService {
       } catch (_) {}
     }
 
-    _conversationsWriteQueue = _conversationsWriteQueue
-        .then((_) => op(), onError: (_) => op());
+    _conversationsWriteQueue = _conversationsWriteQueue.then(
+      (_) => op(),
+      onError: (_) => op(),
+    );
     return _conversationsWriteQueue;
   }
 
@@ -293,10 +316,59 @@ class LocalFileStorageService implements IStorageService {
       }
     }
 
-    final combined = Future.wait([_conversationsWriteQueue, _settingsWriteQueue]);
+    final combined = Future.wait([
+      _conversationsWriteQueue,
+      _settingsWriteQueue,
+      _modelsWriteQueue,
+    ]);
     _conversationsWriteQueue = combined.then((_) => op(), onError: (_) => op());
     _settingsWriteQueue = _conversationsWriteQueue;
+    _modelsWriteQueue = _conversationsWriteQueue;
     return _conversationsWriteQueue;
+  }
+
+  @override
+  Future<void> saveCustomModels(List<LocalModel> models) {
+    final payload = {
+      'schemaVersion': currentSchemaVersion,
+      'updatedAt': DateTime.now().toIso8601String(),
+      'models': models.map((m) => m.toJson()).toList(),
+    };
+    final jsonString = jsonEncode(payload);
+
+    Future<void> writeOp() async {
+      final dir = await _ensureDirectory();
+      final targetFile = File(p.join(dir.path, _modelsFileName));
+      final tempFile = File(p.join(dir.path, '$_modelsFileName.tmp'));
+      await tempFile.writeAsString(jsonString, flush: true);
+      await tempFile.rename(targetFile.path);
+    }
+
+    _modelsWriteQueue = _modelsWriteQueue.then(
+      (_) => writeOp(),
+      onError: (_) => writeOp(),
+    );
+    return _modelsWriteQueue;
+  }
+
+  @override
+  Future<List<LocalModel>> loadCustomModels() async {
+    final dir = await _ensureDirectory();
+    final file = File(p.join(dir.path, _modelsFileName));
+    if (!await file.exists()) return [];
+    try {
+      final content = await file.readAsString();
+      if (content.trim().isEmpty) return [];
+      final decoded = jsonDecode(content);
+      if (decoded is! Map<String, dynamic>) return [];
+      final list = decoded['models'] as List<dynamic>? ?? [];
+      return list
+          .whereType<Map<String, dynamic>>()
+          .map((m) => LocalModel.fromJson(m))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   Map<String, dynamic> _migrateConversations(Map<String, dynamic> raw) {
@@ -349,7 +421,7 @@ class InMemoryStorageService implements IStorageService {
 
   @override
   Future<({List<ChatSession> sessions, String? activeSessionId})>
-      loadConversations() async {
+  loadConversations() async {
     return (
       sessions: List<ChatSession>.from(_sessions),
       activeSessionId: _activeSessionId,
@@ -369,16 +441,31 @@ class InMemoryStorageService implements IStorageService {
 
   @override
   Future<
-      ({
-        ThemeMode themeMode,
-        GenerationSettings settings,
-        String? lastLoadedModelPath,
-      })?> loadSettings() async {
+    ({
+      ThemeMode themeMode,
+      GenerationSettings settings,
+      String? lastLoadedModelPath,
+    })?
+  >
+  loadSettings() async {
     return (
       themeMode: _themeMode,
       settings: _settings,
       lastLoadedModelPath: _lastLoadedModelPath,
     );
+  }
+
+  final List<LocalModel> _customModels = [];
+
+  @override
+  Future<void> saveCustomModels(List<LocalModel> models) async {
+    _customModels.clear();
+    _customModels.addAll(models);
+  }
+
+  @override
+  Future<List<LocalModel>> loadCustomModels() async {
+    return List<LocalModel>.from(_customModels);
   }
 
   @override
@@ -394,5 +481,6 @@ class InMemoryStorageService implements IStorageService {
     _themeMode = ThemeMode.dark;
     _settings = const GenerationSettings();
     _lastLoadedModelPath = null;
+    _customModels.clear();
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../models/chat_message.dart';
 import '../../state/app_scope.dart';
 import '../common/empty_state_view.dart';
@@ -9,10 +10,7 @@ import 'widgets/no_model_banner.dart';
 class ChatScreen extends StatefulWidget {
   final VoidCallback onOpenModelManager;
 
-  const ChatScreen({
-    super.key,
-    required this.onOpenModelManager,
-  });
+  const ChatScreen({super.key, required this.onOpenModelManager});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -55,7 +53,8 @@ class _ChatScreenState extends State<ChatScreen> {
           onSubmitted: (val) {
             final trimmed = val.trim();
             if (trimmed.isNotEmpty) {
-              AppScope.chatOf(context).renameSession(session.id as String, trimmed);
+              AppScope.chatOf(context)
+                  .renameSession(session.id as String, trimmed);
               Navigator.pop(ctx);
             }
           },
@@ -69,7 +68,8 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () {
               final trimmed = controller.text.trim();
               if (trimmed.isNotEmpty) {
-                AppScope.chatOf(context).renameSession(session.id as String, trimmed);
+                AppScope.chatOf(context)
+                    .renameSession(session.id as String, trimmed);
                 Navigator.pop(ctx);
               }
             },
@@ -154,7 +154,11 @@ class _ChatScreenState extends State<ChatScreen> {
               color: theme.colorScheme.errorContainer,
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, size: 16, color: theme.colorScheme.error),
+                  Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: theme.colorScheme.error,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(

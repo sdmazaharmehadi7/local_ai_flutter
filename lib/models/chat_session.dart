@@ -40,24 +40,27 @@ class ChatSession {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-        'modelId': modelId,
-        'activeModelName': activeModelName,
-        'messages': messages.map((m) => m.toJson()).toList(),
-      };
+    'id': id,
+    'title': title,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'modelId': modelId,
+    'activeModelName': activeModelName,
+    'messages': messages.map((m) => m.toJson()).toList(),
+  };
 
   factory ChatSession.fromJson(Map<String, dynamic> json) {
     final rawMessages = json['messages'] as List<dynamic>? ?? [];
     return ChatSession(
-      id: json['id'] as String? ??
+      id:
+          json['id'] as String? ??
           'session_${DateTime.now().millisecondsSinceEpoch}',
       title: json['title'] as String? ?? 'Conversation',
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
           DateTime.now(),
       modelId: json['modelId'] as String?,
       activeModelName: json['activeModelName'] as String?,

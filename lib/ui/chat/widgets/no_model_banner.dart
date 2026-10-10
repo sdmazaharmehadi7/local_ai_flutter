@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class NoModelBanner extends StatelessWidget {
   final VoidCallback onOpenModelManager;
 
-  const NoModelBanner({
-    super.key,
-    required this.onOpenModelManager,
-  });
+  const NoModelBanner({super.key, required this.onOpenModelManager});
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +44,16 @@ class NoModelBanner extends StatelessWidget {
                 onPressed: onOpenModelManager,
                 style: TextButton.styleFrom(
                   visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                 ),
                 icon: const Icon(Icons.download_rounded, size: 16),
-                label: const Text('Model Manager', style: TextStyle(fontSize: 12)),
+                label: const Text(
+                  'Model Manager',
+                  style: TextStyle(fontSize: 12),
+                ),
               ),
             ],
           ),

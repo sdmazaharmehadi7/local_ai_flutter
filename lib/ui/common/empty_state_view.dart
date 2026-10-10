@@ -35,11 +35,7 @@ class EmptyStateView extends StatelessWidget {
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  size: 28,
-                  color: theme.colorScheme.primary,
-                ),
+                child: Icon(icon, size: 28, color: theme.colorScheme.primary),
               ),
               const SizedBox(height: 16),
               Text(
@@ -59,10 +55,7 @@ class EmptyStateView extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-              if (action != null) ...[
-                const SizedBox(height: 20),
-                action!,
-              ],
+              if (action != null) ...[const SizedBox(height: 20), action!],
             ],
           ),
         ),

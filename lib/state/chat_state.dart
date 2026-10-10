@@ -1,5 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
 import '../models/generation_settings.dart';
@@ -155,8 +158,7 @@ class ChatState extends ChangeNotifier {
       final systemNotice = ChatMessage(
         id: 'msg_sys_${now.microsecondsSinceEpoch}_${++_idCounter}',
         role: MessageRole.system,
-        content:
-            'Inference Engine Offline: No local GGUF model is loaded into memory. Load a model in the Model Manager to generate real offline responses.',
+        content: 'Inference Engine Offline: No local GGUF model is loaded into memory. Load a model in the Model Manager to generate real offline responses.',
         timestamp: DateTime.now(),
         status: MessageStatus.sent,
       );
@@ -174,7 +176,8 @@ class ChatState extends ChangeNotifier {
     }
 
     // 3. Model IS loaded: Start real streaming inference
-    final assistantMessageId = 'msg_ast_${now.microsecondsSinceEpoch}_${++_idCounter}';
+    final assistantMessageId =
+        'msg_ast_${now.microsecondsSinceEpoch}_${++_idCounter}';
     final assistantPlaceholder = ChatMessage(
       id: assistantMessageId,
       role: MessageRole.assistant,
@@ -189,8 +192,8 @@ class ChatState extends ChangeNotifier {
         title: newTitle,
         updatedAt: DateTime.now(),
         modelId: currentSession.modelId ?? inferenceService.currentModelName,
-        activeModelName: currentSession.activeModelName ??
-            inferenceService.currentModelName,
+        activeModelName:
+            currentSession.activeModelName ?? inferenceService.currentModelName,
         messages: updatedMessages,
       ),
     );
@@ -199,9 +202,17 @@ class ChatState extends ChangeNotifier {
     _isGenerating = true;
     notifyListeners();
 
+    try {
+      await WakelockPlus.enable();
+    } catch (_) {}
+
     final buffer = StringBuffer();
     final completer = Completer<void>();
     _generationCompleter = completer;
+
+    int tokenCount = 0;
+    DateTime? firstTokenTime;
+    double currentTokensPerSec = 0.0;
 
     try {
       final tokenStream = inferenceService.generate(
@@ -212,10 +223,22 @@ class ChatState extends ChangeNotifier {
       _generationSubscription = tokenStream.listen(
         (token) {
           buffer.write(token);
+          tokenCount++;
+          final now = DateTime.now();
+          firstTokenTime ??= now;
+          final elapsedMs = now.difference(firstTokenTime!).inMilliseconds;
+          if (elapsedMs >= 300) {
+            currentTokensPerSec = (tokenCount / (elapsedMs / 1000.0));
+          }
+
           _updateAssistantContent(
             assistantMessageId,
             buffer.toString(),
             status: MessageStatus.generating,
+            tokensPerSecond: currentTokensPerSec > 0
+                ? currentTokensPerSec
+                : null,
+            tokenCount: tokenCount,
           );
           // Debounce persistence during generation to avoid excessive disk writes
           _scheduleDebouncedPersistence();
@@ -232,6 +255,10 @@ class ChatState extends ChangeNotifier {
                 : '[Error: $errorMsg]',
             status: MessageStatus.error,
             errorMessage: errorMsg,
+            tokensPerSecond: currentTokensPerSec > 0
+                ? currentTokensPerSec
+                : null,
+            tokenCount: tokenCount > 0 ? tokenCount : null,
           );
           _persist();
           if (!completer.isCompleted) completer.complete();
@@ -243,6 +270,10 @@ class ChatState extends ChangeNotifier {
             assistantMessageId,
             buffer.toString().trim(),
             status: MessageStatus.sent,
+            tokensPerSecond: currentTokensPerSec > 0
+                ? currentTokensPerSec
+                : null,
+            tokenCount: tokenCount > 0 ? tokenCount : null,
           );
           _persist();
           if (!completer.isCompleted) completer.complete();
@@ -267,6 +298,9 @@ class ChatState extends ChangeNotifier {
       if (!completer.isCompleted) completer.complete();
       _generationCompleter = null;
     } finally {
+      try {
+        await WakelockPlus.disable();
+      } catch (_) {}
       _isGenerating = false;
       _generationSubscription = null;
       _generationCompleter = null;
@@ -274,8 +308,14 @@ class ChatState extends ChangeNotifier {
     }
   }
 
-  Future<void> stopGeneration({required IInferenceService inferenceService}) async {
+  Future<void> stopGeneration({
+    required IInferenceService inferenceService,
+  }) async {
     if (!_isGenerating) return;
+
+    try {
+      await WakelockPlus.disable();
+    } catch (_) {}
 
     await inferenceService.stopGeneration();
     await _generationSubscription?.cancel();
@@ -290,8 +330,9 @@ class ChatState extends ChangeNotifier {
     // Mark active generating message as stopped
     if (activeSession != null) {
       final messages = List<ChatMessage>.from(activeSession!.messages);
-      final lastIdx =
-          messages.indexWhere((m) => m.status == MessageStatus.generating);
+      final lastIdx = messages.indexWhere(
+        (m) => m.status == MessageStatus.generating,
+      );
       if (lastIdx != -1) {
         final lastMsg = messages[lastIdx];
         messages[lastIdx] = lastMsg.copyWith(
@@ -313,6 +354,8 @@ class ChatState extends ChangeNotifier {
     String content, {
     required MessageStatus status,
     String? errorMessage,
+    double? tokensPerSecond,
+    int? tokenCount,
   }) {
     if (activeSession == null) return;
     final messages = List<ChatMessage>.from(activeSession!.messages);
@@ -322,6 +365,8 @@ class ChatState extends ChangeNotifier {
         content: content,
         status: status,
         errorMessage: errorMessage,
+        tokensPerSecond: tokensPerSecond,
+        tokenCount: tokenCount,
       );
       _updateSession(activeSession!.copyWith(messages: messages));
     }

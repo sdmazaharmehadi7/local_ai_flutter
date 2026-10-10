@@ -1,7 +1,10 @@
 import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+
 import '../../state/app_scope.dart';
+import '../diagnostics/diagnostics_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -180,9 +183,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             value: genSettings.contextWindow,
                             underline: const SizedBox(),
                             items: const [
-                              DropdownMenuItem(value: 2048, child: Text('2,048 tokens')),
-                              DropdownMenuItem(value: 4096, child: Text('4,096 tokens')),
-                              DropdownMenuItem(value: 8192, child: Text('8,192 tokens')),
+                              DropdownMenuItem(
+                                value: 2048,
+                                child: Text('2,048 tokens'),
+                              ),
+                              DropdownMenuItem(
+                                value: 4096,
+                                child: Text('4,096 tokens'),
+                              ),
+                              DropdownMenuItem(
+                                value: 8192,
+                                child: Text('8,192 tokens'),
+                              ),
                             ],
                             onChanged: (val) {
                               if (val != null) {
@@ -252,6 +264,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Divider(height: 16),
                       ListTile(
                         contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.analytics_outlined),
+                        title: const Text(
+                          'Hardware Diagnostics & System Audit',
+                        ),
+                        subtitle: const Text(
+                          'View RAM recommendations, engine backend, and storage metrics',
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const DiagnosticsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(height: 16),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.folder_special_outlined),
                         title: const Text('Storage Location'),
                         subtitle: const Text(
@@ -263,7 +295,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.wifi_off_outlined),
                         title: const Text('Telemetry & Analytics'),
-                        subtitle: const Text('Disabled by design (100% offline)'),
+                        subtitle: const Text(
+                          'Disabled by design (100% offline)',
+                        ),
                         trailing: Icon(
                           Icons.check_circle_outline,
                           color: theme.colorScheme.tertiary,
@@ -305,7 +339,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     Navigator.pop(ctx);
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('All chat history deleted.'),
+                                        content: Text(
+                                          'All chat history deleted.',
+                                        ),
                                       ),
                                     );
                                   },

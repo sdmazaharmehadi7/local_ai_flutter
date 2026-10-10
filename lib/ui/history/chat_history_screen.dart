@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../models/chat_session.dart';
 import '../../state/app_scope.dart';
 import '../common/empty_state_view.dart';
@@ -6,10 +7,7 @@ import '../common/empty_state_view.dart';
 class ChatHistoryScreen extends StatelessWidget {
   final VoidCallback onNavigateToChat;
 
-  const ChatHistoryScreen({
-    super.key,
-    required this.onNavigateToChat,
-  });
+  const ChatHistoryScreen({super.key, required this.onNavigateToChat});
 
   void _confirmClearAll(BuildContext context) {
     showDialog(
@@ -129,8 +127,7 @@ class ChatHistoryScreen extends StatelessWidget {
           ? EmptyStateView(
               icon: Icons.history_rounded,
               title: 'No Conversations Yet',
-              description:
-                  'Your local chat logs will appear here. No data is ever uploaded or synced to external servers.',
+              description: 'Your local chat logs will appear here. No data is ever uploaded or synced to external servers.',
               action: FilledButton.tonalIcon(
                 onPressed: () {
                   chatState.createNewChat();
@@ -170,8 +167,9 @@ class ChatHistoryScreen extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontWeight:
-                                isCurrent ? FontWeight.w600 : FontWeight.w500,
+                            fontWeight: isCurrent
+                                ? FontWeight.w600
+                                : FontWeight.w500,
                           ),
                         ),
                         subtitle: Text(
@@ -192,8 +190,7 @@ class ChatHistoryScreen extends StatelessWidget {
                             IconButton(
                               icon: const Icon(Icons.delete_outline, size: 18),
                               tooltip: 'Delete',
-                              onPressed: () =>
-                                  _confirmDelete(context, session),
+                              onPressed: () => _confirmDelete(context, session),
                             ),
                           ],
                         ),

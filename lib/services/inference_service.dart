@@ -1,8 +1,9 @@
 import 'dart:async';
-import 'dart:io'
-    show File, FileMode, FileSystemEntity, RandomAccessFile;
+import 'dart:io' show File, FileMode, FileSystemEntity, RandomAccessFile;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:llamadart/llamadart.dart';
+
 import '../models/chat_message.dart';
 import '../models/generation_settings.dart';
 
@@ -97,7 +98,8 @@ class LocalInferenceService implements IInferenceService {
           header[0] != 0x47 || // 'G'
           header[1] != 0x47 || // 'G'
           header[2] != 0x55 || // 'U'
-          header[3] != 0x46) { // 'F'
+          header[3] != 0x46) {
+        // 'F'
         throw const InferenceException(
           'Corrupted or invalid GGUF file header. The file does not contain valid GGUF magic bytes (may be an incomplete download or HTML error page).',
         );
@@ -126,10 +128,7 @@ class LocalInferenceService implements IInferenceService {
         gpuLayers: useGpu ? 99 : 0,
       );
 
-      _engine = await LlamaEngine.load(
-        model,
-        params: modelParams,
-      );
+      _engine = await LlamaEngine.load(model, params: modelParams);
 
       _currentModelPath = trimmedPath;
       _currentModelName = _extractFileName(trimmedPath);
@@ -141,12 +140,16 @@ class LocalInferenceService implements IInferenceService {
     } catch (e) {
       await unloadModel();
       final errStr = e.toString().toLowerCase();
-      if (errStr.contains('memory') || errStr.contains('alloc') || errStr.contains('oom')) {
+      if (errStr.contains('memory') ||
+          errStr.contains('alloc') ||
+          errStr.contains('oom')) {
         throw const InferenceException(
           'Insufficient memory: Your device does not have enough available RAM or VRAM '
           'to load this model. Try a smaller quantized model or reduce the context window.',
         );
-      } else if (errStr.contains('magic') || errStr.contains('format') || errStr.contains('header')) {
+      } else if (errStr.contains('magic') ||
+          errStr.contains('format') ||
+          errStr.contains('header')) {
         throw const InferenceException(
           'Corrupted or unsupported GGUF file format. Please verify the model was converted with a recent llama.cpp build.',
         );
@@ -243,10 +246,7 @@ class LocalInferenceService implements IInferenceService {
     );
 
     try {
-      final chunkStream = _engine!.create(
-        llamaMessages,
-        params: genParams,
-      );
+      final chunkStream = _engine!.create(llamaMessages, params: genParams);
 
       _activeSubscription = chunkStream.listen(
         (chunk) {

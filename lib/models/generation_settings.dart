@@ -11,8 +11,7 @@ class GenerationSettings {
     this.topP = 0.9,
     this.contextWindow = 4096,
     this.maxTokens = 1024,
-    this.systemPrompt =
-        'You are Sovereign AI, an intelligent, private, and completely offline assistant running locally on this machine.',
+    this.systemPrompt = 'You are Sovereign AI, an intelligent, private, and completely offline assistant running locally on this machine.',
     this.useGpuAcceleration = true,
   });
 
@@ -35,13 +34,13 @@ class GenerationSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'temperature': temperature,
-        'topP': topP,
-        'contextWindow': contextWindow,
-        'maxTokens': maxTokens,
-        'systemPrompt': systemPrompt,
-        'useGpuAcceleration': useGpuAcceleration,
-      };
+    'temperature': temperature,
+    'topP': topP,
+    'contextWindow': contextWindow,
+    'maxTokens': maxTokens,
+    'systemPrompt': systemPrompt,
+    'useGpuAcceleration': useGpuAcceleration,
+  };
 
   factory GenerationSettings.fromJson(Map<String, dynamic> json) {
     return GenerationSettings(
@@ -49,8 +48,7 @@ class GenerationSettings {
       topP: (json['topP'] as num?)?.toDouble() ?? 0.9,
       contextWindow: (json['contextWindow'] as num?)?.toInt() ?? 4096,
       maxTokens: (json['maxTokens'] as num?)?.toInt() ?? 1024,
-      systemPrompt: json['systemPrompt'] as String? ??
-          'You are Sovereign AI, an intelligent, private, and completely offline assistant running locally on this machine.',
+      systemPrompt: json['systemPrompt'] as String? ?? 'You are Sovereign AI, an intelligent, private, and completely offline assistant running locally on this machine.',
       useGpuAcceleration: json['useGpuAcceleration'] as bool? ?? true,
     );
   }

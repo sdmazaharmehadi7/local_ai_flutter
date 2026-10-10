@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_constants.dart';
+import '../diagnostics/diagnostics_screen.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -9,9 +11,7 @@ class AboutScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('About Sovereign AI'),
-      ),
+      appBar: AppBar(title: const Text('About Sovereign AI')),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 860),
@@ -82,6 +82,19 @@ class AboutScreen extends StatelessWidget {
                     '• Android: 64-bit ARM (arm64-v8a) with Vulkan/OpenCL acceleration.\n'
                     '• Windows / Linux: Native AVX2/AVX-512 CPU & CUDA/Vulkan support.\n'
                     '• Web: Limited; WebAssembly/Browser sandbox restricts multi-gigabyte GGUF local execution.',
+              ),
+              const SizedBox(height: 24),
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DiagnosticsScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.analytics_outlined),
+                label: const Text('Hardware Diagnostics & Storage Audit'),
               ),
             ],
           ),

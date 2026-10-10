@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/responsive/responsive_layout.dart';
 import '../../state/app_scope.dart';
 import '../about/about_screen.dart';
@@ -31,13 +32,9 @@ class _AppShellState extends State<AppShell> {
     final hasModelLoaded = modelState.hasLoadedModel;
 
     final screens = [
-      ChatScreen(
-        onOpenModelManager: () => _onDestinationSelected(1),
-      ),
+      ChatScreen(onOpenModelManager: () => _onDestinationSelected(1)),
       const ModelManagerScreen(),
-      ChatHistoryScreen(
-        onNavigateToChat: () => _onDestinationSelected(0),
-      ),
+      ChatHistoryScreen(onNavigateToChat: () => _onDestinationSelected(0)),
       const SettingsScreen(),
       const AboutScreen(),
     ];
@@ -135,10 +132,7 @@ class _AppShellState extends State<AppShell> {
             ),
             const VerticalDivider(thickness: 1, width: 1),
             Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: screens,
-              ),
+              child: IndexedStack(index: _selectedIndex, children: screens),
             ),
           ],
         ),
@@ -147,10 +141,7 @@ class _AppShellState extends State<AppShell> {
 
     // Mobile layout with NavigationBar
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onDestinationSelected,

@@ -1,14 +1,6 @@
-enum MessageRole {
-  user,
-  assistant,
-  system,
-}
+enum MessageRole { user, assistant, system }
 
-enum MessageStatus {
-  sent,
-  generating,
-  error,
-}
+enum MessageStatus { sent, generating, error }
 
 class ChatMessage {
   final String id;
@@ -17,6 +9,8 @@ class ChatMessage {
   final DateTime timestamp;
   final MessageStatus status;
   final String? errorMessage;
+  final double? tokensPerSecond;
+  final int? tokenCount;
 
   const ChatMessage({
     required this.id,
@@ -25,6 +19,8 @@ class ChatMessage {
     required this.timestamp,
     this.status = MessageStatus.sent,
     this.errorMessage,
+    this.tokensPerSecond,
+    this.tokenCount,
   });
 
   ChatMessage copyWith({
@@ -34,6 +30,8 @@ class ChatMessage {
     DateTime? timestamp,
     MessageStatus? status,
     String? errorMessage,
+    double? tokensPerSecond,
+    int? tokenCount,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -42,17 +40,21 @@ class ChatMessage {
       timestamp: timestamp ?? this.timestamp,
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
+      tokensPerSecond: tokensPerSecond ?? this.tokensPerSecond,
+      tokenCount: tokenCount ?? this.tokenCount,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'role': role.name,
-        'content': content,
-        'timestamp': timestamp.toIso8601String(),
-        'status': status.name,
-        if (errorMessage != null) 'errorMessage': errorMessage,
-      };
+    'id': id,
+    'role': role.name,
+    'content': content,
+    'timestamp': timestamp.toIso8601String(),
+    'status': status.name,
+    if (errorMessage != null) 'errorMessage': errorMessage,
+    if (tokensPerSecond != null) 'tokensPerSecond': tokensPerSecond,
+    if (tokenCount != null) 'tokenCount': tokenCount,
+  };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
     final rawStatus = json['status'] as String?;
@@ -68,16 +70,21 @@ class ChatMessage {
     }
 
     return ChatMessage(
-      id: json['id'] as String? ?? 'msg_${DateTime.now().millisecondsSinceEpoch}',
+      id:
+          json['id'] as String? ??
+          'msg_${DateTime.now().millisecondsSinceEpoch}',
       role: MessageRole.values.firstWhere(
         (r) => r.name == json['role'],
         orElse: () => MessageRole.user,
       ),
       content: json['content'] as String? ?? '',
-      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+      timestamp:
+          DateTime.tryParse(json['timestamp'] as String? ?? '') ??
           DateTime.now(),
       status: resolvedStatus,
       errorMessage: json['errorMessage'] as String?,
+      tokensPerSecond: (json['tokensPerSecond'] as num?)?.toDouble(),
+      tokenCount: json['tokenCount'] as int?,
     );
   }
 }
