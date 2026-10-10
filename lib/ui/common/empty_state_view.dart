@@ -29,13 +29,17 @@ class EmptyStateView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 56,
-                height: 56,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  color: theme.colorScheme.surfaceContainerLow,
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant,
+                    width: 1,
+                  ),
                 ),
-                child: Icon(icon, size: 28, color: theme.colorScheme.primary),
+                child: Icon(icon, size: 24, color: theme.colorScheme.primary),
               ),
               const SizedBox(height: 16),
               Text(

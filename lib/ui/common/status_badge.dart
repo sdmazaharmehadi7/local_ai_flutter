@@ -24,12 +24,12 @@ class StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: isOutlined
             ? Colors.transparent
-            : effectiveColor.withValues(alpha: 0.12),
+            : effectiveColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: isOutlined
-              ? effectiveColor.withValues(alpha: 0.5)
-              : effectiveColor.withValues(alpha: 0.25),
+              ? theme.colorScheme.outlineVariant
+              : effectiveColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

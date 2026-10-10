@@ -1,48 +1,48 @@
 import 'package:flutter/material.dart';
 
 class AppColorSchemes {
-  // Slate-indigo dark theme for a focused, technical aesthetic
+  // ChatGPT / Claude inspired sleek charcoal dark theme
   static const ColorScheme darkColorScheme = ColorScheme(
     brightness: Brightness.dark,
-    primary: Color(0xFF6366F1), // Indigo
+    primary: Color(0xFF10A37A), // Restrained emerald / OpenAI green
     onPrimary: Color(0xFFFFFFFF),
-    primaryContainer: Color(0xFF312E81),
-    onPrimaryContainer: Color(0xFFE0E7FF),
-    secondary: Color(0xFF0EA5E9), // Sky blue
-    onSecondary: Color(0xFFFFFFFF),
-    secondaryContainer: Color(0xFF0C4A6E),
-    onSecondaryContainer: Color(0xFFBAE6FD),
-    tertiary: Color(0xFF10B981), // Emerald
-    onTertiary: Color(0xFFFFFFFF),
+    primaryContainer: Color(0xFF1E2E28),
+    onPrimaryContainer: Color(0xFFA7F3D0),
+    secondary: Color(0xFFA1A1AA), // Zinc 400
+    onSecondary: Color(0xFF18181B),
+    secondaryContainer: Color(0xFF27272A),
+    onSecondaryContainer: Color(0xFFE4E4E7),
+    tertiary: Color(0xFF34D399),
+    onTertiary: Color(0xFF064E3B),
     tertiaryContainer: Color(0xFF064E3B),
     onTertiaryContainer: Color(0xFFA7F3D0),
-    error: Color(0xFFF87171),
-    onError: Color(0xFF450A0A),
-    errorContainer: Color(0xFF7F1D1D),
-    onErrorContainer: Color(0xFFFEE2E2),
-    surface: Color(0xFF0F172A), // Slate 900
-    onSurface: Color(0xFFF8FAFC), // Slate 50
-    surfaceContainerLowest: Color(0xFF020617), // Slate 950
-    surfaceContainerLow: Color(0xFF0F172A),
-    surfaceContainer: Color(0xFF1E293B), // Slate 800
-    surfaceContainerHigh: Color(0xFF334155), // Slate 700
-    surfaceContainerHighest: Color(0xFF475569), // Slate 600
-    outline: Color(0xFF64748B), // Slate 500
-    outlineVariant: Color(0xFF334155),
+    error: Color(0xFFEF4444),
+    onError: Color(0xFFFFFFFF),
+    errorContainer: Color(0xFF451A1A),
+    onErrorContainer: Color(0xFFFCA5A5),
+    surface: Color(0xFF18181B), // Zinc 900
+    onSurface: Color(0xFFF4F4F5), // Zinc 100
+    surfaceContainerLowest: Color(0xFF09090B), // Zinc 950
+    surfaceContainerLow: Color(0xFF121214),
+    surfaceContainer: Color(0xFF202024), // Neutral dark card
+    surfaceContainerHigh: Color(0xFF27272A), // Zinc 800
+    surfaceContainerHighest: Color(0xFF323238),
+    outline: Color(0xFF71717A), // Zinc 500
+    outlineVariant: Color(0xFF2E2E33), // Subtle 1px borders
   );
 
-  // Clean, high-contrast light theme
+  // Clean, high-contrast, distraction-free light theme
   static const ColorScheme lightColorScheme = ColorScheme(
     brightness: Brightness.light,
-    primary: Color(0xFF4F46E5), // Indigo 600
+    primary: Color(0xFF0D9488), // Restrained teal/emerald
     onPrimary: Color(0xFFFFFFFF),
-    primaryContainer: Color(0xFFEEF2FF),
-    onPrimaryContainer: Color(0xFF312E81),
-    secondary: Color(0xFF0284C7), // Sky 600
+    primaryContainer: Color(0xFFE6F4EA),
+    onPrimaryContainer: Color(0xFF065F46),
+    secondary: Color(0xFF71717A), // Zinc 500
     onSecondary: Color(0xFFFFFFFF),
-    secondaryContainer: Color(0xFFE0F2FE),
-    onSecondaryContainer: Color(0xFF075985),
-    tertiary: Color(0xFF059669), // Emerald 600
+    secondaryContainer: Color(0xFFF4F4F5),
+    onSecondaryContainer: Color(0xFF18181B),
+    tertiary: Color(0xFF059669),
     onTertiary: Color(0xFFFFFFFF),
     tertiaryContainer: Color(0xFFECFDF5),
     onTertiaryContainer: Color(0xFF065F46),
@@ -50,14 +50,14 @@ class AppColorSchemes {
     onError: Color(0xFFFFFFFF),
     errorContainer: Color(0xFFFEE2E2),
     onErrorContainer: Color(0xFF991B1B),
-    surface: Color(0xFFF8FAFC), // Slate 50
-    onSurface: Color(0xFF0F172A), // Slate 900
+    surface: Color(0xFFFFFFFF),
+    onSurface: Color(0xFF18181B), // Zinc 900
     surfaceContainerLowest: Color(0xFFFFFFFF),
-    surfaceContainerLow: Color(0xFFF1F5F9), // Slate 100
-    surfaceContainer: Color(0xFFE2E8F0), // Slate 200
-    surfaceContainerHigh: Color(0xFFCBD5E1), // Slate 300
-    surfaceContainerHighest: Color(0xFF94A3B8), // Slate 400
-    outline: Color(0xFF94A3B8),
-    outlineVariant: Color(0xFFE2E8F0),
+    surfaceContainerLow: Color(0xFFF9F9FB), // Subtle off-white
+    surfaceContainer: Color(0xFFF4F4F5), // Zinc 100
+    surfaceContainerHigh: Color(0xFFE4E4E7), // Zinc 200
+    surfaceContainerHighest: Color(0xFFD4D4D8), // Zinc 300
+    outline: Color(0xFFA1A1AA),
+    outlineVariant: Color(0xFFE4E4E7), // Subtle border
   );
 }

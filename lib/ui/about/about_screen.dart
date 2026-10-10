@@ -22,29 +22,34 @@ class AboutScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     Container(
-                      width: 72,
-                      height: 72,
+                      width: 64,
+                      height: 64,
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                          width: 1,
+                        ),
                       ),
                       child: Icon(
                         Icons.shield_outlined,
-                        size: 38,
+                        size: 32,
                         color: theme.colorScheme.primary,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     Text(
                       AppConstants.appName,
-                      style: theme.textTheme.headlineSmall?.copyWith(
+                      style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        letterSpacing: -0.3,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${AppConstants.appTagline} • v${AppConstants.appVersion}',
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.outline,
                       ),
                     ),

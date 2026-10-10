@@ -42,9 +42,7 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
     }
 
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.any,
-      );
+      final result = await FilePicker.pickFiles(type: FileType.any);
 
       if (result.isEmpty) return;
 
@@ -548,19 +546,34 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
               // Active Model in RAM Banner
               if (activeModel != null) ...[
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: theme.brightness == Brightness.dark
+                        ? const Color(0xFF1E2E28)
+                        : const Color(0xFFF0FDF4),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.green.withValues(alpha: 0.5),
+                      color: const Color(0xFF10A37A).withValues(alpha: 0.4),
+                      width: 1,
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.memory, color: Colors.green, size: 28),
-                      const SizedBox(width: 14),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10A37A)
+                              .withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.memory,
+                          color: Color(0xFF10A37A),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,7 +582,7 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
                               'Active in RAM: ${activeModel.name}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                                fontSize: 13.5,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -577,6 +590,7 @@ class _ModelManagerScreenState extends State<ModelManagerScreen> {
                               'Context: ${settingsState.generationSettings.contextWindow} tokens • File: ${activeModel.filename}',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.outline,
+                                fontSize: 11.5,
                               ),
                             ),
                           ],

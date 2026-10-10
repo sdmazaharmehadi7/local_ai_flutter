@@ -11,32 +11,30 @@ class NoModelBanner extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
+        color: theme.colorScheme.surfaceContainerLow,
         border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-            width: 1,
-          ),
+          bottom: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
         ),
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 860),
+          constraints: const BoxConstraints(maxWidth: 820),
           child: Row(
             children: [
               Icon(
-                Icons.warning_amber_rounded,
-                size: 18,
-                color: theme.colorScheme.secondary,
+                Icons.memory_outlined,
+                size: 16,
+                color: theme.colorScheme.outline,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'No local GGUF model is loaded into memory.',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.outline,
+                    fontSize: 12,
                   ),
                 ),
               ),
@@ -46,13 +44,13 @@ class NoModelBanner extends StatelessWidget {
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
-                    vertical: 6,
+                    vertical: 4,
                   ),
                 ),
-                icon: const Icon(Icons.download_rounded, size: 16),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 14),
                 label: const Text(
                   'Model Manager',
-                  style: TextStyle(fontSize: 12),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
             ],

@@ -81,6 +81,7 @@ class ModelCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     final isDownloaded = model.downloadStatus == ModelDownloadStatus.downloaded;
     final isDownloading =
@@ -89,8 +90,20 @@ class ModelCard extends StatelessWidget {
     final isError = model.downloadStatus == ModelDownloadStatus.error;
     final isLoaded = model.loadStatus == ModelLoadStatus.loaded;
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? (isLoaded ? const Color(0xFF1F2E26) : const Color(0xFF202024))
+            : (isLoaded ? const Color(0xFFF0FDF4) : const Color(0xFFFFFFFF)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isLoaded
+              ? (isDark ? const Color(0xFF10A37A) : const Color(0xFF86EFAC))
+              : theme.colorScheme.outlineVariant,
+          width: isLoaded ? 1.5 : 1.0,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -110,15 +123,16 @@ class ModelCard extends StatelessWidget {
                               model.name,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
+                                letterSpacing: -0.2,
                               ),
                             ),
                           ),
                           if (isLoaded) ...[
                             const SizedBox(width: 8),
                             const StatusBadge(
-                              icon: Icons.check_circle,
-                              label: 'Active Model',
-                              color: Colors.green,
+                              icon: Icons.check_circle_rounded,
+                              label: 'Loaded in RAM',
+                              color: Color(0xFF10A37A),
                             ),
                           ],
                         ],
@@ -134,13 +148,15 @@ class ModelCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     StatusBadge(
                       label: model.quantization,
-                      color: theme.colorScheme.secondary,
+                      color: isDark
+                          ? const Color(0xFFD4D4D8)
+                          : const Color(0xFF3F3F46),
                     ),
                     const SizedBox(height: 4),
                     StatusBadge(
@@ -152,13 +168,13 @@ class ModelCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Wrap(
-              spacing: 8,
+              spacing: 6,
               runSpacing: 6,
               children: [
                 StatusBadge(
-                  icon: Icons.pie_chart_outline,
+                  icon: Icons.folder_zip_outlined,
                   label: '${model.diskSizeGb} GB Disk',
                   color: theme.colorScheme.outline,
                   isOutlined: true,
@@ -170,14 +186,14 @@ class ModelCard extends StatelessWidget {
                   isOutlined: true,
                 ),
                 StatusBadge(
-                  icon: Icons.person_outline,
+                  icon: Icons.verified_user_outlined,
                   label: model.publisher,
                   color: theme.colorScheme.outline,
                   isOutlined: true,
                 ),
                 StatusBadge(
                   icon: Icons.speed,
-                  label: 'Min ${model.minRamGb} GB RAM',
+                  label: 'Min ${model.minRamGb} GB',
                   color: theme.colorScheme.outline,
                   isOutlined: true,
                 ),
@@ -185,7 +201,7 @@ class ModelCard extends StatelessWidget {
                   const StatusBadge(
                     icon: Icons.check_circle_outline,
                     label: 'Downloaded',
-                    color: Colors.green,
+                    color: Color(0xFF10A37A),
                   )
                 else if (isDownloading)
                   StatusBadge(
@@ -202,19 +218,19 @@ class ModelCard extends StatelessWidget {
                 else if (isError)
                   StatusBadge(
                     icon: Icons.error_outline,
-                    label: 'Download Failed',
+                    label: 'Failed',
                     color: theme.colorScheme.error,
                   )
                 else
                   StatusBadge(
                     icon: Icons.cloud_download_outlined,
-                    label: 'Not Downloaded',
+                    label: 'Available',
                     color: theme.colorScheme.outline,
                   ),
               ],
             ),
             if (isDownloading || isPaused) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -262,11 +278,14 @@ class ModelCard extends StatelessWidget {
                     alpha: 0.5,
                   ),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: theme.colorScheme.error.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      Icons.info_outline,
+                      Icons.error_outline,
                       size: 16,
                       color: theme.colorScheme.error,
                     ),
@@ -290,7 +309,7 @@ class ModelCard extends StatelessWidget {
                 if (isDownloading) ...[
                   OutlinedButton.icon(
                     onPressed: onPauseDownload,
-                    icon: const Icon(Icons.pause, size: 16),
+                    icon: const Icon(Icons.pause, size: 15),
                     label: const Text('Pause'),
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
@@ -299,7 +318,7 @@ class ModelCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: onCancelDownload,
-                    icon: const Icon(Icons.close, size: 16),
+                    icon: const Icon(Icons.close, size: 15),
                     label: const Text('Cancel'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: theme.colorScheme.error,
@@ -309,7 +328,7 @@ class ModelCard extends StatelessWidget {
                 ] else if (isPaused) ...[
                   FilledButton.tonalIcon(
                     onPressed: onResumeDownload,
-                    icon: const Icon(Icons.play_arrow, size: 16),
+                    icon: const Icon(Icons.play_arrow, size: 15),
                     label: const Text('Resume'),
                     style: FilledButton.styleFrom(
                       visualDensity: VisualDensity.compact,
@@ -318,7 +337,7 @@ class ModelCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: onCancelDownload,
-                    icon: const Icon(Icons.close, size: 16),
+                    icon: const Icon(Icons.close, size: 15),
                     label: const Text('Cancel'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: theme.colorScheme.error,
@@ -328,7 +347,7 @@ class ModelCard extends StatelessWidget {
                 ] else if (isError) ...[
                   FilledButton.tonalIcon(
                     onPressed: onDownload,
-                    icon: const Icon(Icons.refresh, size: 16),
+                    icon: const Icon(Icons.refresh, size: 15),
                     label: const Text('Retry Download'),
                     style: FilledButton.styleFrom(
                       visualDensity: VisualDensity.compact,
@@ -337,7 +356,7 @@ class ModelCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: isLoading ? null : onPickLocal,
-                    icon: const Icon(Icons.folder_open, size: 16),
+                    icon: const Icon(Icons.folder_open, size: 15),
                     label: const Text('Import Local'),
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
@@ -346,7 +365,7 @@ class ModelCard extends StatelessWidget {
                 ] else if (!isDownloaded) ...[
                   OutlinedButton.icon(
                     onPressed: isLoading ? null : onPickLocal,
-                    icon: const Icon(Icons.file_open_outlined, size: 16),
+                    icon: const Icon(Icons.file_open_outlined, size: 15),
                     label: const Text('Import .gguf'),
                     style: OutlinedButton.styleFrom(
                       visualDensity: VisualDensity.compact,
@@ -356,7 +375,7 @@ class ModelCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     FilledButton.icon(
                       onPressed: isLoading ? null : onDownload,
-                      icon: const Icon(Icons.download, size: 16),
+                      icon: const Icon(Icons.download, size: 15),
                       label: Text('Download (${model.diskSizeGb} GB)'),
                       style: FilledButton.styleFrom(
                         visualDensity: VisualDensity.compact,
@@ -369,7 +388,7 @@ class ModelCard extends StatelessWidget {
                     tooltip: 'Delete local model file',
                     icon: Icon(
                       Icons.delete_outline,
-                      size: 20,
+                      size: 18,
                       color: theme.colorScheme.error,
                     ),
                     onPressed: isLoading ? null : () => _confirmDelete(context),
@@ -378,7 +397,7 @@ class ModelCard extends StatelessWidget {
                   if (!isLoaded) ...[
                     OutlinedButton.icon(
                       onPressed: isLoading ? null : onPickLocal,
-                      icon: const Icon(Icons.folder_open_outlined, size: 16),
+                      icon: const Icon(Icons.folder_open_outlined, size: 15),
                       label: const Text('Change File'),
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
@@ -387,7 +406,7 @@ class ModelCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     FilledButton.tonalIcon(
                       onPressed: isLoading ? null : onLoad,
-                      icon: const Icon(Icons.bolt, size: 16),
+                      icon: const Icon(Icons.bolt, size: 15),
                       label: const Text('Load into RAM'),
                       style: FilledButton.styleFrom(
                         visualDensity: VisualDensity.compact,
@@ -402,7 +421,7 @@ class ModelCard extends StatelessWidget {
                         visualDensity: VisualDensity.compact,
                       ),
                       onPressed: isLoading ? null : onUnload,
-                      icon: const Icon(Icons.stop_circle_outlined, size: 16),
+                      icon: const Icon(Icons.stop_circle_outlined, size: 15),
                       label: const Text('Unload from Memory'),
                     ),
                 ],

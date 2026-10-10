@@ -7,6 +7,7 @@ import '../chat/chat_screen.dart';
 import '../history/chat_history_screen.dart';
 import '../models/model_manager_screen.dart';
 import '../settings/settings_screen.dart';
+import 'widgets/sovereign_drawer.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -16,6 +17,7 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
 
   void _onDestinationSelected(int index) {
@@ -32,7 +34,10 @@ class _AppShellState extends State<AppShell> {
     final hasModelLoaded = modelState.hasLoadedModel;
 
     final screens = [
-      ChatScreen(onOpenModelManager: () => _onDestinationSelected(1)),
+      ChatScreen(
+        onOpenModelManager: () => _onDestinationSelected(1),
+        onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+      ),
       const ModelManagerScreen(),
       ChatHistoryScreen(onNavigateToChat: () => _onDestinationSelected(0)),
       const SettingsScreen(),
@@ -41,6 +46,11 @@ class _AppShellState extends State<AppShell> {
 
     if (isDesktopOrTablet) {
       return Scaffold(
+        key: _scaffoldKey,
+        drawer: SovereignDrawer(
+          selectedIndex: _selectedIndex,
+          onSelectDestination: _onDestinationSelected,
+        ),
         body: Row(
           children: [
             NavigationRail(
@@ -52,15 +62,15 @@ class _AppShellState extends State<AppShell> {
                 child: Column(
                   children: [
                     Container(
-                      width: 42,
-                      height: 42,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
-                        Icons.shield,
-                        size: 24,
+                        Icons.shield_outlined,
+                        size: 22,
                         color: theme.colorScheme.primary,
                       ),
                     ),
@@ -139,8 +149,13 @@ class _AppShellState extends State<AppShell> {
       );
     }
 
-    // Mobile layout with NavigationBar
+    // Mobile layout with ChatGPT sidebar drawer and bottom NavigationBar
     return Scaffold(
+      key: _scaffoldKey,
+      drawer: SovereignDrawer(
+        selectedIndex: _selectedIndex,
+        onSelectDestination: _onDestinationSelected,
+      ),
       body: IndexedStack(index: _selectedIndex, children: screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,

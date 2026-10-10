@@ -149,14 +149,33 @@ class ChatHistoryScreen extends StatelessWidget {
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 8),
+                      color: isCurrent
+                          ? (theme.brightness == Brightness.dark
+                                ? const Color(0xFF202024)
+                                : const Color(0xFFF4F4F5))
+                          : theme.colorScheme.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        side: BorderSide(
+                          color: isCurrent
+                              ? theme.colorScheme.primary.withValues(alpha: 0.4)
+                              : theme.colorScheme.outlineVariant,
+                          width: 1,
+                        ),
+                      ),
                       child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isCurrent
-                              ? theme.colorScheme.primaryContainer
-                              : theme.colorScheme.surfaceContainerHigh,
+                        leading: Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: isCurrent
+                                ? theme.colorScheme.primaryContainer
+                                : theme.colorScheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: Icon(
-                            Icons.chat_bubble_outline,
-                            size: 18,
+                            Icons.chat_bubble_outline_rounded,
+                            size: 16,
                             color: isCurrent
                                 ? theme.colorScheme.primary
                                 : theme.colorScheme.outline,
@@ -167,6 +186,7 @@ class ChatHistoryScreen extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
+                            fontSize: 14,
                             fontWeight: isCurrent
                                 ? FontWeight.w600
                                 : FontWeight.w500,
@@ -176,19 +196,20 @@ class ChatHistoryScreen extends StatelessWidget {
                           '${session.messages.length} messages • ${_formatDate(session.updatedAt)}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.outline,
+                            fontSize: 11.5,
                           ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              icon: const Icon(Icons.edit_outlined, size: 17),
                               tooltip: 'Rename',
                               onPressed: () =>
                                   _showRenameDialog(context, session),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 18),
+                              icon: const Icon(Icons.delete_outline, size: 17),
                               tooltip: 'Delete',
                               onPressed: () => _confirmDelete(context, session),
                             ),

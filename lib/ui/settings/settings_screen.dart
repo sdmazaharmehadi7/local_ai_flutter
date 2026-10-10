@@ -365,12 +365,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSectionHeader(String title, ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
       child: Text(
         title,
-        style: theme.textTheme.titleSmall?.copyWith(
+        style: theme.textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w600,
-          color: theme.colorScheme.primary,
+          color: theme.colorScheme.outline,
+          letterSpacing: 0.3,
         ),
       ),
     );

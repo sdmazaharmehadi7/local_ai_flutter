@@ -9,8 +9,13 @@ import 'widgets/no_model_banner.dart';
 
 class ChatScreen extends StatefulWidget {
   final VoidCallback onOpenModelManager;
+  final VoidCallback? onOpenDrawer;
 
-  const ChatScreen({super.key, required this.onOpenModelManager});
+  const ChatScreen({
+    super.key,
+    required this.onOpenModelManager,
+    this.onOpenDrawer,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -92,35 +97,61 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Conversations & Menu',
+          icon: const Icon(Icons.menu_rounded, size: 22),
+          onPressed: () {
+            if (widget.onOpenDrawer != null) {
+              widget.onOpenDrawer!();
+            } else {
+              Scaffold.of(context).openDrawer();
+            }
+          },
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               activeSession?.title ?? 'Sovereign AI',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               overflow: TextOverflow.ellipsis,
             ),
-            Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: hasModelLoaded ? Colors.green : Colors.amber,
-                    shape: BoxShape.circle,
+            InkWell(
+              onTap: widget.onOpenModelManager,
+              borderRadius: BorderRadius.circular(4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: hasModelLoaded
+                          ? const Color(0xFF10A37A)
+                          : Colors.amber,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  hasModelLoaded
-                      ? '${modelState.activeModel!.name} (Loaded)'
-                      : 'No Model Loaded',
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  const SizedBox(width: 6),
+                  Text(
+                    hasModelLoaded
+                        ? '${modelState.activeModel!.name} (Loaded)'
+                        : 'No Model Loaded',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 13,
                     color: theme.colorScheme.outline,
-                    fontSize: 11,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -128,7 +159,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (activeSession != null)
             IconButton(
               tooltip: 'Rename Conversation',
-              icon: const Icon(Icons.drive_file_rename_outline, size: 20),
+              icon: const Icon(Icons.edit_outlined, size: 20),
               onPressed: () => _showRenameDialog(context, activeSession),
             ),
           IconButton(
@@ -138,7 +169,7 @@ class _ChatScreenState extends State<ChatScreen> {
               chatState.createNewChat();
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
         ],
       ),
       body: Column(
@@ -224,9 +255,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageList(List<ChatMessage> messages, bool isGenerating) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 860),
+        constraints: const BoxConstraints(maxWidth: 820),
         child: ListView.builder(
           controller: _scrollController,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.symmetric(vertical: 16),
           itemCount: messages.length,
           itemBuilder: (context, index) {
