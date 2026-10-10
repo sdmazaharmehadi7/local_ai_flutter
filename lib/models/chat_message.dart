@@ -1,3 +1,5 @@
+import 'rag/rag_citation.dart';
+
 enum MessageRole { user, assistant, system }
 
 enum MessageStatus { sent, generating, error }
@@ -11,6 +13,7 @@ class ChatMessage {
   final String? errorMessage;
   final double? tokensPerSecond;
   final int? tokenCount;
+  final List<RagCitation>? citations;
 
   const ChatMessage({
     required this.id,
@@ -21,6 +24,7 @@ class ChatMessage {
     this.errorMessage,
     this.tokensPerSecond,
     this.tokenCount,
+    this.citations,
   });
 
   ChatMessage copyWith({
@@ -32,6 +36,7 @@ class ChatMessage {
     String? errorMessage,
     double? tokensPerSecond,
     int? tokenCount,
+    List<RagCitation>? citations,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -42,6 +47,7 @@ class ChatMessage {
       errorMessage: errorMessage ?? this.errorMessage,
       tokensPerSecond: tokensPerSecond ?? this.tokensPerSecond,
       tokenCount: tokenCount ?? this.tokenCount,
+      citations: citations ?? this.citations,
     );
   }
 
@@ -54,6 +60,8 @@ class ChatMessage {
     if (errorMessage != null) 'errorMessage': errorMessage,
     if (tokensPerSecond != null) 'tokensPerSecond': tokensPerSecond,
     if (tokenCount != null) 'tokenCount': tokenCount,
+    if (citations != null)
+      'citations': citations!.map((c) => c.toJson()).toList(),
   };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -68,6 +76,8 @@ class ChatMessage {
     if (resolvedStatus == MessageStatus.generating) {
       resolvedStatus = MessageStatus.sent;
     }
+
+    final rawCitations = json['citations'] as List<dynamic>?;
 
     return ChatMessage(
       id:
@@ -85,6 +95,10 @@ class ChatMessage {
       errorMessage: json['errorMessage'] as String?,
       tokensPerSecond: (json['tokensPerSecond'] as num?)?.toDouble(),
       tokenCount: json['tokenCount'] as int?,
+      citations: rawCitations
+          ?.whereType<Map<String, dynamic>>()
+          .map((c) => RagCitation.fromJson(c))
+          .toList(),
     );
   }
 }

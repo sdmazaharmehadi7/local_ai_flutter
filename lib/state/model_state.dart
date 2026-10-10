@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import '../models/local_model.dart';
 import '../services/inference_service.dart';
 import '../services/model_download_service.dart';
+import '../services/rag/embedding_service.dart';
 import '../services/storage_service.dart';
 
 class ModelState extends ChangeNotifier {
@@ -16,10 +17,32 @@ class ModelState extends ChangeNotifier {
   final IModelDownloadService _downloadService;
   final IStorageService? _storageService;
   final String? _customModelsDirectory;
+  final IEmbeddingService? embeddingService;
   String? _resolvedModelsDirectory;
   StreamSubscription<ModelDownloadProgress>? _downloadSubscription;
 
   final List<LocalModel> _catalogModels = [
+    const LocalModel(
+      id: 'all-minilm-l6-v2-q4',
+      name: 'all-MiniLM-L6-v2 (Embedding)',
+      family: 'MiniLM',
+      parameterSize: '22M',
+      quantization: 'Q4_K_M',
+      diskSizeGb: 0.023,
+      estimatedRamGb: 0.05,
+      minRamGb: 0.2,
+      publisher: 'Sentence Transformers',
+      license: 'Apache 2.0',
+      description:
+          'Compact 384-dimensional neural embedding model for semantic search and local RAG. Runs offline via llamadart on Metal and ARM64.',
+      filename: 'all-MiniLM-L6-v2-Q4_K_M.gguf',
+      downloadUrl:
+          'https://huggingface.co/second-state/All-MiniLM-L6-v2-Embedding-GGUF/resolve/main/all-MiniLM-L6-v2-Q4_K_M.gguf',
+      downloadStatus: ModelDownloadStatus.notDownloaded,
+      loadStatus: ModelLoadStatus.unloaded,
+      sourceType: ModelSourceType.catalog,
+      isEmbeddingModel: true,
+    ),
     const LocalModel(
       id: 'smollm2-135m-q4',
       name: 'SmolLM2 135M Instruct',
@@ -145,6 +168,7 @@ class ModelState extends ChangeNotifier {
     IModelDownloadService? downloadService,
     this._storageService,
     String? modelsDirectory,
+    this.embeddingService,
   }) : _inferenceService = inferenceService ?? LocalInferenceService(),
        _downloadService = downloadService ?? ModelDownloadService(),
        _customModelsDirectory = modelsDirectory {
@@ -185,6 +209,19 @@ class ModelState extends ChangeNotifier {
           m.filename.toLowerCase().contains(q);
     }).toList();
   }
+
+  LocalModel? get installedEmbeddingModel {
+    return _models
+        .where(
+          (m) =>
+              m.isEmbeddingModel &&
+              m.downloadStatus == ModelDownloadStatus.downloaded &&
+              m.localPath != null,
+        )
+        .firstOrNull;
+  }
+
+  bool get hasInstalledEmbeddingModel => installedEmbeddingModel != null;
 
   Future<void> init() async {
     if (kIsWeb) return;
@@ -517,6 +554,12 @@ class ModelState extends ChangeNotifier {
   Future<void> deleteModel(LocalModel model) async {
     if (_activeModel?.id == model.id) {
       await unloadActiveModel();
+    }
+
+    if (model.isEmbeddingModel) {
+      try {
+        await embeddingService?.unloadModel();
+      } catch (_) {}
     }
 
     if (model.localPath != null) {

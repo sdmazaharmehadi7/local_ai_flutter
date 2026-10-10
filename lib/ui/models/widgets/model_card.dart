@@ -135,6 +135,14 @@ class ModelCard extends StatelessWidget {
                               color: Color(0xFF10A37A),
                             ),
                           ],
+                          if (model.isEmbeddingModel) ...[
+                            const SizedBox(width: 8),
+                            StatusBadge(
+                              icon: Icons.hub_outlined,
+                              label: 'Neural Embedding',
+                              color: theme.colorScheme.primary,
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -376,7 +384,9 @@ class ModelCard extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: isLoading ? null : onDownload,
                       icon: const Icon(Icons.download, size: 15),
-                      label: Text('Download (${model.diskSizeGb} GB)'),
+                      label: Text(
+                        'Download (${model.diskSizeGb < 0.1 ? "${(model.diskSizeGb * 1024).round()} MB" : "${model.diskSizeGb} GB"})',
+                      ),
                       style: FilledButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                       ),
@@ -394,36 +404,44 @@ class ModelCard extends StatelessWidget {
                     onPressed: isLoading ? null : () => _confirmDelete(context),
                   ),
                   const Spacer(),
-                  if (!isLoaded) ...[
-                    OutlinedButton.icon(
-                      onPressed: isLoading ? null : onPickLocal,
-                      icon: const Icon(Icons.folder_open_outlined, size: 15),
-                      label: const Text('Change File'),
-                      style: OutlinedButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                      ),
+                  if (model.isEmbeddingModel) ...[
+                    const StatusBadge(
+                      icon: Icons.check_circle_outline,
+                      label: 'Ready for Neural RAG',
+                      color: Color(0xFF10A37A),
                     ),
-                    const SizedBox(width: 8),
-                    FilledButton.tonalIcon(
-                      onPressed: isLoading ? null : onLoad,
-                      icon: const Icon(Icons.bolt, size: 15),
-                      label: const Text('Load into RAM'),
-                      style: FilledButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
+                  ] else ...[
+                    if (!isLoaded) ...[
+                      OutlinedButton.icon(
+                        onPressed: isLoading ? null : onPickLocal,
+                        icon: const Icon(Icons.folder_open_outlined, size: 15),
+                        label: const Text('Change File'),
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      FilledButton.tonalIcon(
+                        onPressed: isLoading ? null : onLoad,
+                        icon: const Icon(Icons.bolt, size: 15),
+                        label: const Text('Load into RAM'),
+                        style: FilledButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ],
+                    if (isLoaded)
+                      FilledButton.tonalIcon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.errorContainer,
+                          foregroundColor: theme.colorScheme.onErrorContainer,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: isLoading ? null : onUnload,
+                        icon: const Icon(Icons.stop_circle_outlined, size: 15),
+                        label: const Text('Unload from Memory'),
+                      ),
                   ],
-                  if (isLoaded)
-                    FilledButton.tonalIcon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: theme.colorScheme.errorContainer,
-                        foregroundColor: theme.colorScheme.onErrorContainer,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      onPressed: isLoading ? null : onUnload,
-                      icon: const Icon(Icons.stop_circle_outlined, size: 15),
-                      label: const Text('Unload from Memory'),
-                    ),
                 ],
               ],
             ),

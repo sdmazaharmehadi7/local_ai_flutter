@@ -34,6 +34,7 @@ class LocalModel {
   final String? localPath;
   final String? downloadError;
   final DateTime? lastUsedAt;
+  final bool isEmbeddingModel;
 
   const LocalModel({
     required this.id,
@@ -59,7 +60,11 @@ class LocalModel {
     this.localPath,
     this.downloadError,
     this.lastUsedAt,
+    this.isEmbeddingModel = false,
   });
+
+  bool get isDownloaded =>
+      downloadStatus == ModelDownloadStatus.downloaded && localPath != null;
 
   LocalModel copyWith({
     String? id,
@@ -85,6 +90,7 @@ class LocalModel {
     String? localPath,
     String? downloadError,
     DateTime? lastUsedAt,
+    bool? isEmbeddingModel,
     bool clearLocalPath = false,
     bool clearDownloadError = false,
   }) {
@@ -115,6 +121,7 @@ class LocalModel {
           ? null
           : (downloadError ?? this.downloadError),
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      isEmbeddingModel: isEmbeddingModel ?? this.isEmbeddingModel,
     );
   }
 
@@ -135,6 +142,7 @@ class LocalModel {
     'sourceType': sourceType.name,
     'localPath': localPath,
     if (lastUsedAt != null) 'lastUsedAt': lastUsedAt!.toIso8601String(),
+    if (isEmbeddingModel) 'isEmbeddingModel': true,
   };
 
   factory LocalModel.fromJson(Map<String, dynamic> json) {
@@ -162,6 +170,7 @@ class LocalModel {
       lastUsedAt: json['lastUsedAt'] != null
           ? DateTime.tryParse(json['lastUsedAt'] as String)
           : null,
+      isEmbeddingModel: json['isEmbeddingModel'] as bool? ?? false,
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../../../models/chat_message.dart';
+import '../../../models/rag/rag_citation.dart';
 
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
@@ -16,6 +17,180 @@ class MessageBubble extends StatelessWidget {
         content: Text('$label copied to clipboard'),
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showCitationDetails(
+    BuildContext context,
+    RagCitation citation,
+    int index,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              Icons.source_outlined,
+              size: 20,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Source [$index]: ${citation.fileName}',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (citation.pageNumber != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    'Page ${citation.pageNumber}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ),
+                ),
+              Text(
+                'Retrieved Evidence:',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.outline,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF18181B)
+                      : const Color(0xFFF4F4F5),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: theme.colorScheme.outlineVariant),
+                ),
+                child: SelectableText(
+                  citation.snippet,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    height: 1.5,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCitations(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final citations = message.citations!;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.library_books_outlined,
+                size: 13,
+                color: theme.colorScheme.outline,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Sources:',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.outline,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+          for (int i = 0; i < citations.length; i++)
+            InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _showCitationDetails(context, citations[i], i + 1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? const Color(0xFF27272A)
+                      : const Color(0xFFF4F4F5),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '[${i + 1}]',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 130),
+                      child: Text(
+                        citations[i].fileName,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (citations[i].pageNumber != null) ...[
+                      const SizedBox(width: 2),
+                      Text(
+                        '(p.${citations[i].pageNumber})',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontSize: 10,
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -245,6 +420,8 @@ class MessageBubble extends StatelessWidget {
                     );
                   },
                 ),
+                if (message.citations != null && message.citations!.isNotEmpty)
+                  _buildCitations(context),
                 if (message.content.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Row(

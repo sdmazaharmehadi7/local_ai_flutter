@@ -1,36 +1,68 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
 import '../models/generation_settings.dart';
+import '../models/rag/document_attachment.dart';
+import '../models/rag/rag_citation.dart';
 import '../services/inference_service.dart';
+import '../services/rag/embedding_service.dart';
+import '../services/rag/rag_service.dart';
+import '../services/rag/vector_retrieval_service.dart';
 import '../services/storage_service.dart';
+import 'model_state.dart';
 
 class ChatState extends ChangeNotifier {
   static int _idCounter = 0;
   final IStorageService? storageService;
+  final IRagService ragService;
+  final ModelState? modelState;
+
   final List<ChatSession> _sessions = [];
+  final Map<String, List<DocumentAttachment>> _sessionDocuments = {};
+
   String? _activeSessionId;
   bool _isGenerating = false;
   StreamSubscription<String>? _generationSubscription;
   Timer? _debounceTimer;
   Completer<void>? _generationCompleter;
 
-  ChatState({this.storageService});
+  bool _isIndexingDocument = false;
+  String? _indexingDocumentName;
+  String? _indexingError;
+
+  ChatState({
+    this.storageService,
+    IRagService? ragService,
+    IEmbeddingService? embeddingService,
+    this.modelState,
+  }) : ragService = ragService ?? RagService(embeddingService: embeddingService);
 
   List<ChatSession> get sessions => List.unmodifiable(_sessions);
   bool get isGenerating => _isGenerating;
   String? get activeSessionId => _activeSessionId;
+
+  bool get isIndexingDocument => _isIndexingDocument;
+  String? get indexingDocumentName => _indexingDocumentName;
+  String? get indexingError => _indexingError;
 
   ChatSession? get activeSession {
     if (_activeSessionId == null) return null;
     return _sessions.where((s) => s.id == _activeSessionId).firstOrNull;
   }
 
+  List<DocumentAttachment> get activeSessionDocuments {
+    if (_activeSessionId == null) return const [];
+    return List.unmodifiable(_sessionDocuments[_activeSessionId] ?? const []);
+  }
+
   Future<void> init() async {
+    await ragService.init();
+
     if (storageService == null) return;
     try {
       final stored = await storageService!.loadConversations();
@@ -45,6 +77,19 @@ class ChatState extends ChangeNotifier {
       } else {
         _activeSessionId = null;
       }
+
+      // Load attached document metadata for loaded sessions
+      for (final session in _sessions) {
+        if (session.attachedDocumentIds.isNotEmpty) {
+          try {
+            final docs = await ragService.getDocumentsByIds(
+              session.attachedDocumentIds,
+            );
+            _sessionDocuments[session.id] = docs;
+          } catch (_) {}
+        }
+      }
+
       notifyListeners();
     } catch (_) {
       // Gracefully continue with in-memory sessions on error
@@ -65,9 +110,11 @@ class ChatState extends ChangeNotifier {
       modelId: modelId,
       activeModelName: activeModelName,
       messages: [],
+      attachedDocumentIds: const [],
     );
     _sessions.insert(0, newSession);
     _activeSessionId = newSession.id;
+    _sessionDocuments[newSession.id] = [];
     notifyListeners();
     _persist();
   }
@@ -75,6 +122,18 @@ class ChatState extends ChangeNotifier {
   void selectSession(String sessionId) {
     if (_activeSessionId != sessionId) {
       _activeSessionId = sessionId;
+
+      // Lazy load documents if needed
+      final session = activeSession;
+      if (session != null &&
+          session.attachedDocumentIds.isNotEmpty &&
+          !_sessionDocuments.containsKey(sessionId)) {
+        ragService.getDocumentsByIds(session.attachedDocumentIds).then((docs) {
+          _sessionDocuments[sessionId] = docs;
+          notifyListeners();
+        });
+      }
+
       notifyListeners();
       _persist();
     }
@@ -98,6 +157,8 @@ class ChatState extends ChangeNotifier {
 
   void deleteSession(String sessionId) {
     _sessions.removeWhere((s) => s.id == sessionId);
+    _sessionDocuments.remove(sessionId);
+
     if (_activeSessionId == sessionId) {
       _activeSessionId = _sessions.isNotEmpty ? _sessions.first.id : null;
     }
@@ -107,15 +168,132 @@ class ChatState extends ChangeNotifier {
 
   void clearAllSessions() {
     _sessions.clear();
+    _sessionDocuments.clear();
     _activeSessionId = null;
     notifyListeners();
     storageService?.clearAllChatData();
+  }
+
+  Future<void> _ensureEmbeddingModelLoaded([ModelState? externalModelState]) async {
+    final ms = externalModelState ?? modelState;
+    if (ms == null) return;
+    final embedding = ragService.embeddingService;
+    if (embedding == null || embedding.isLoaded) return;
+    final installed = ms.installedEmbeddingModel;
+    if (installed != null && installed.localPath != null) {
+      try {
+        await embedding.loadModel(
+          installed.localPath!,
+          modelId: installed.id,
+        );
+      } catch (_) {
+        // Continue with lexical fallback
+      }
+    }
+  }
+
+  Future<DocumentAttachment?> attachDocument(
+    String filePath, {
+    ModelState? modelState,
+  }) async {
+    if (activeSession == null) {
+      createNewChat(initialTitle: 'Document Chat');
+    }
+
+    final currentSession = activeSession!;
+    final fileName = p.basename(filePath);
+
+    _isIndexingDocument = true;
+    _indexingDocumentName = fileName;
+    _indexingError = null;
+    notifyListeners();
+
+    try {
+      await _ensureEmbeddingModelLoaded(modelState);
+
+      final doc = await ragService.processAndIndexDocument(
+        sessionId: currentSession.id,
+        filePath: filePath,
+      );
+
+      final updatedDocIds = List<String>.from(
+        currentSession.attachedDocumentIds,
+      );
+      if (!updatedDocIds.contains(doc.id)) {
+        updatedDocIds.add(doc.id);
+      }
+
+      final docs = List<DocumentAttachment>.from(
+        _sessionDocuments[currentSession.id] ?? [],
+      );
+      final existingIdx = docs.indexWhere((d) => d.id == doc.id);
+      if (existingIdx != -1) {
+        docs[existingIdx] = doc;
+      } else {
+        docs.add(doc);
+      }
+      _sessionDocuments[currentSession.id] = docs;
+
+      String newTitle = currentSession.title;
+      if (currentSession.title == 'New Conversation' ||
+          currentSession.title == 'Document Chat') {
+        newTitle = 'Chat: $fileName';
+      }
+
+      _updateSession(
+        currentSession.copyWith(
+          title: newTitle,
+          attachedDocumentIds: updatedDocIds,
+          updatedAt: DateTime.now(),
+        ),
+      );
+      _persist();
+      return doc;
+    } catch (e) {
+      _indexingError = e.toString();
+      rethrow;
+    } finally {
+      _isIndexingDocument = false;
+      _indexingDocumentName = null;
+      notifyListeners();
+    }
+  }
+
+  Future<void> reindexDocument(
+    String documentId, {
+    ModelState? modelState,
+  }) async {
+    await _ensureEmbeddingModelLoaded(modelState);
+    await ragService.reindexDocument(documentId);
+    notifyListeners();
+  }
+
+  Future<void> removeDocument(String documentId) async {
+    if (activeSession == null) return;
+    final currentSession = activeSession!;
+
+    final updatedDocIds = List<String>.from(currentSession.attachedDocumentIds)
+      ..remove(documentId);
+
+    final docs = List<DocumentAttachment>.from(
+      _sessionDocuments[currentSession.id] ?? [],
+    )..removeWhere((d) => d.id == documentId);
+    _sessionDocuments[currentSession.id] = docs;
+
+    _updateSession(
+      currentSession.copyWith(
+        attachedDocumentIds: updatedDocIds,
+        updatedAt: DateTime.now(),
+      ),
+    );
+    _persist();
   }
 
   Future<void> sendMessage(
     String content, {
     required IInferenceService inferenceService,
     required GenerationSettings settings,
+    ModelState? modelState,
   }) async {
     final cleanContent = content.trim();
     if (cleanContent.isEmpty ||
@@ -149,7 +327,8 @@ class ChatState extends ChangeNotifier {
 
     String newTitle = currentSession.title;
     if (currentSession.messages.isEmpty &&
-        currentSession.title == 'New Conversation') {
+        (currentSession.title == 'New Conversation' ||
+            currentSession.title == 'Document Chat')) {
       newTitle = _deriveTitle(cleanContent);
     }
 
@@ -175,7 +354,42 @@ class ChatState extends ChangeNotifier {
       return;
     }
 
-    // 3. Model IS loaded: Start real streaming inference
+    // 3. Local RAG Context Retrieval (if documents are attached to this conversation)
+    final attachedDocIds = currentSession.attachedDocumentIds;
+    RetrievalResult? retrieval;
+    List<RagCitation>? citations;
+    String inferencePrompt = cleanContent;
+
+    if (attachedDocIds.isNotEmpty) {
+      try {
+        await _ensureEmbeddingModelLoaded(modelState);
+
+        retrieval = await ragService.retrieveContext(
+          documentIds: attachedDocIds,
+          query: cleanContent,
+          mode: settings.retrievalMode,
+          topK: settings.ragTopK,
+        );
+
+        if (retrieval.hasSufficientEvidence && retrieval.chunks.isNotEmpty) {
+          inferencePrompt = ragService.buildGroundedUserPrompt(
+            userQuery: cleanContent,
+            retrieval: retrieval,
+          );
+          citations = retrieval.citations;
+        } else {
+          // Document attached, but question has no matching context
+          inferencePrompt =
+              'The user asked: "$cleanContent"\n\n'
+              'Note: The user has attached documents to this chat, but the document index contains no matching context for this query. '
+              'Please state clearly that the attached document(s) do not contain sufficient information to answer this question.';
+        }
+      } catch (_) {
+        inferencePrompt = cleanContent;
+      }
+    }
+
+    // 4. Model IS loaded: Start real streaming inference
     final assistantMessageId =
         'msg_ast_${now.microsecondsSinceEpoch}_${++_idCounter}';
     final assistantPlaceholder = ChatMessage(
@@ -184,6 +398,7 @@ class ChatState extends ChangeNotifier {
       content: '',
       timestamp: DateTime.now(),
       status: MessageStatus.generating,
+      citations: citations,
     );
 
     updatedMessages.add(assistantPlaceholder);
@@ -215,8 +430,20 @@ class ChatState extends ChangeNotifier {
     double currentTokensPerSec = 0.0;
 
     try {
+      // Build inference messages: Replace the last user message with grounded prompt if RAG is active
+      final messagesForInference = List<ChatMessage>.from(
+        updatedMessages.sublist(0, updatedMessages.length - 1),
+      );
+      if (messagesForInference.isNotEmpty &&
+          messagesForInference.last.role == MessageRole.user &&
+          inferencePrompt != cleanContent) {
+        final lastUser = messagesForInference.last;
+        messagesForInference[messagesForInference.length - 1] = lastUser
+            .copyWith(content: inferencePrompt);
+      }
+
       final tokenStream = inferenceService.generate(
-        messages: updatedMessages.sublist(0, updatedMessages.length - 1),
+        messages: messagesForInference,
         settings: settings,
       );
 
@@ -239,11 +466,11 @@ class ChatState extends ChangeNotifier {
                 ? currentTokensPerSec
                 : null,
             tokenCount: tokenCount,
+            citations: citations,
           );
-          // Debounce persistence during generation to avoid excessive disk writes
           _scheduleDebouncedPersistence();
         },
-        onError: (Object error) {
+        onError: (Object error) async {
           _cancelDebouncedPersistence();
           final errorMsg = error is InferenceException
               ? error.message
@@ -259,12 +486,13 @@ class ChatState extends ChangeNotifier {
                 ? currentTokensPerSec
                 : null,
             tokenCount: tokenCount > 0 ? tokenCount : null,
+            citations: citations,
           );
-          _persist();
+          await _persist();
           if (!completer.isCompleted) completer.complete();
           _generationCompleter = null;
         },
-        onDone: () {
+        onDone: () async {
           _cancelDebouncedPersistence();
           _updateAssistantContent(
             assistantMessageId,
@@ -274,8 +502,9 @@ class ChatState extends ChangeNotifier {
                 ? currentTokensPerSec
                 : null,
             tokenCount: tokenCount > 0 ? tokenCount : null,
+            citations: citations,
           );
-          _persist();
+          await _persist();
           if (!completer.isCompleted) completer.complete();
           _generationCompleter = null;
         },
@@ -293,8 +522,9 @@ class ChatState extends ChangeNotifier {
         '[Error: $errorMsg]',
         status: MessageStatus.error,
         errorMessage: errorMsg,
+        citations: citations,
       );
-      _persist();
+      await _persist();
       if (!completer.isCompleted) completer.complete();
       _generationCompleter = null;
     } finally {
@@ -327,7 +557,6 @@ class ChatState extends ChangeNotifier {
     _cancelDebouncedPersistence();
     _isGenerating = false;
 
-    // Mark active generating message as stopped
     if (activeSession != null) {
       final messages = List<ChatMessage>.from(activeSession!.messages);
       final lastIdx = messages.indexWhere(
@@ -356,6 +585,7 @@ class ChatState extends ChangeNotifier {
     String? errorMessage,
     double? tokensPerSecond,
     int? tokenCount,
+    List<RagCitation>? citations,
   }) {
     if (activeSession == null) return;
     final messages = List<ChatMessage>.from(activeSession!.messages);
@@ -367,6 +597,7 @@ class ChatState extends ChangeNotifier {
         errorMessage: errorMessage,
         tokensPerSecond: tokensPerSecond,
         tokenCount: tokenCount,
+        citations: citations ?? messages[idx].citations,
       );
       _updateSession(activeSession!.copyWith(messages: messages));
     }
@@ -392,11 +623,12 @@ class ChatState extends ChangeNotifier {
     _debounceTimer = null;
   }
 
-  void _persist() {
-    storageService?.saveConversations(
-      _sessions,
-      activeSessionId: _activeSessionId,
-    );
+  Future<void> _persist() {
+    return storageService?.saveConversations(
+          _sessions,
+          activeSessionId: _activeSessionId,
+        ) ??
+        Future.value();
   }
 
   String _deriveTitle(String text) {

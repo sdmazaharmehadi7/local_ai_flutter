@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/chat_message.dart';
@@ -34,6 +35,47 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+  Future<void> _handleAttachFiles() async {
+    final chatState = AppScope.chatOf(context);
+    final modelState = AppScope.modelOf(context);
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'txt', 'md', 'docx', 'csv', 'json', 'log'],
+      );
+
+      if (result.isEmpty) return;
+
+      for (final file in result) {
+        if (file.path != null) {
+          try {
+            await chatState.attachDocument(file.path!, modelState: modelState);
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(e.toString()),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to open file picker: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -216,11 +258,17 @@ class _ChatScreenState extends State<ChatScreen> {
           ChatInputBar(
             hasModelLoaded: hasModelLoaded,
             isGenerating: chatState.isGenerating,
+            isIndexingDocument: chatState.isIndexingDocument,
+            indexingDocumentName: chatState.indexingDocumentName,
+            attachedDocuments: chatState.activeSessionDocuments,
+            onAttachFiles: _handleAttachFiles,
+            onRemoveAttachment: (docId) => chatState.removeDocument(docId),
             onSend: (text) {
               chatState.sendMessage(
                 text,
                 inferenceService: modelState.inferenceService,
                 settings: settingsState.generationSettings,
+                modelState: modelState,
               );
               _scrollToBottom();
             },

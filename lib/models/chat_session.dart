@@ -8,6 +8,7 @@ class ChatSession {
   final List<ChatMessage> messages;
   final String? modelId;
   final String? activeModelName;
+  final List<String> attachedDocumentIds;
 
   const ChatSession({
     required this.id,
@@ -17,6 +18,7 @@ class ChatSession {
     required this.messages,
     this.modelId,
     this.activeModelName,
+    this.attachedDocumentIds = const [],
   });
 
   ChatSession copyWith({
@@ -27,6 +29,7 @@ class ChatSession {
     List<ChatMessage>? messages,
     String? modelId,
     String? activeModelName,
+    List<String>? attachedDocumentIds,
   }) {
     return ChatSession(
       id: id ?? this.id,
@@ -36,6 +39,7 @@ class ChatSession {
       messages: messages ?? this.messages,
       modelId: modelId ?? this.modelId,
       activeModelName: activeModelName ?? this.activeModelName,
+      attachedDocumentIds: attachedDocumentIds ?? this.attachedDocumentIds,
     );
   }
 
@@ -46,11 +50,13 @@ class ChatSession {
     'updatedAt': updatedAt.toIso8601String(),
     'modelId': modelId,
     'activeModelName': activeModelName,
+    'attachedDocumentIds': attachedDocumentIds,
     'messages': messages.map((m) => m.toJson()).toList(),
   };
 
   factory ChatSession.fromJson(Map<String, dynamic> json) {
     final rawMessages = json['messages'] as List<dynamic>? ?? [];
+    final rawDocIds = json['attachedDocumentIds'] as List<dynamic>? ?? [];
     return ChatSession(
       id:
           json['id'] as String? ??
@@ -64,6 +70,7 @@ class ChatSession {
           DateTime.now(),
       modelId: json['modelId'] as String?,
       activeModelName: json['activeModelName'] as String?,
+      attachedDocumentIds: rawDocIds.map((e) => e.toString()).toList(),
       messages: rawMessages
           .whereType<Map<String, dynamic>>()
           .map((m) => ChatMessage.fromJson(m))
