@@ -255,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         leading: const Icon(Icons.folder_special_outlined),
                         title: const Text('Storage Location'),
                         subtitle: const Text(
-                          'Encrypted App Sandbox Storage (PathProvider directory)',
+                          'Encrypted App Sandbox Storage (sovereign_ai/conversations.json, settings.json)',
                         ),
                       ),
                       const Divider(height: 16),
@@ -268,6 +268,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Icons.check_circle_outline,
                           color: theme.colorScheme.tertiary,
                         ),
+                      ),
+                      const Divider(height: 16),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          Icons.delete_forever_outlined,
+                          color: theme.colorScheme.error,
+                        ),
+                        title: Text(
+                          'Delete All Local Chat Data',
+                          style: TextStyle(color: theme.colorScheme.error),
+                        ),
+                        subtitle: const Text(
+                          'Erase all conversations and reset chat storage.',
+                        ),
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Delete All Chat Data?'),
+                              content: const Text(
+                                'This will permanently erase all local chat history. This action cannot be undone.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: const Text('Cancel'),
+                                ),
+                                FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: theme.colorScheme.error,
+                                  ),
+                                  onPressed: () {
+                                    AppScope.chatOf(context).clearAllSessions();
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('All chat history deleted.'),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Delete All'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

@@ -33,4 +33,25 @@ class GenerationSettings {
       useGpuAcceleration: useGpuAcceleration ?? this.useGpuAcceleration,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'temperature': temperature,
+        'topP': topP,
+        'contextWindow': contextWindow,
+        'maxTokens': maxTokens,
+        'systemPrompt': systemPrompt,
+        'useGpuAcceleration': useGpuAcceleration,
+      };
+
+  factory GenerationSettings.fromJson(Map<String, dynamic> json) {
+    return GenerationSettings(
+      temperature: (json['temperature'] as num?)?.toDouble() ?? 0.7,
+      topP: (json['topP'] as num?)?.toDouble() ?? 0.9,
+      contextWindow: (json['contextWindow'] as num?)?.toInt() ?? 4096,
+      maxTokens: (json['maxTokens'] as num?)?.toInt() ?? 1024,
+      systemPrompt: json['systemPrompt'] as String? ??
+          'You are Sovereign AI, an intelligent, private, and completely offline assistant running locally on this machine.',
+      useGpuAcceleration: json['useGpuAcceleration'] as bool? ?? true,
+    );
+  }
 }

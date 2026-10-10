@@ -39,6 +39,47 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  void _showRenameDialog(BuildContext context, dynamic session) {
+    final controller = TextEditingController(text: session.title as String);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename Conversation'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Title',
+            hintText: 'Enter new conversation title',
+          ),
+          onSubmitted: (val) {
+            final trimmed = val.trim();
+            if (trimmed.isNotEmpty) {
+              AppScope.chatOf(context).renameSession(session.id as String, trimmed);
+              Navigator.pop(ctx);
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final trimmed = controller.text.trim();
+              if (trimmed.isNotEmpty) {
+                AppScope.chatOf(context).renameSession(session.id as String, trimmed);
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -84,6 +125,12 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
+          if (activeSession != null)
+            IconButton(
+              tooltip: 'Rename Conversation',
+              icon: const Icon(Icons.drive_file_rename_outline, size: 20),
+              onPressed: () => _showRenameDialog(context, activeSession),
+            ),
           IconButton(
             tooltip: 'New Conversation',
             icon: const Icon(Icons.add_comment_outlined, size: 20),

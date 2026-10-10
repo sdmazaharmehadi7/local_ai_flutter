@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
+import 'services/storage_service.dart';
 import 'state/app_scope.dart';
 import 'state/chat_state.dart';
 import 'state/model_state.dart';
 import 'state/settings_state.dart';
 import 'ui/shell/app_shell.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const SovereignApp());
+  final storageService = LocalFileStorageService();
+  await storageService.init();
+  runApp(SovereignApp(storageService: storageService));
 }
 
 class SovereignApp extends StatefulWidget {
-  const SovereignApp({super.key});
+  final IStorageService? storageService;
+
+  const SovereignApp({super.key, this.storageService});
 
   @override
   State<SovereignApp> createState() => _SovereignAppState();
@@ -21,6 +26,7 @@ class SovereignApp extends StatefulWidget {
 
 class _SovereignAppState extends State<SovereignApp>
     with WidgetsBindingObserver {
+  late final IStorageService _storageService;
   late final SettingsState _settingsState;
   late final ModelState _modelState;
   late final ChatState _chatState;
@@ -29,9 +35,13 @@ class _SovereignAppState extends State<SovereignApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _settingsState = SettingsState();
+    _storageService = widget.storageService ?? LocalFileStorageService();
+    _settingsState = SettingsState(storageService: _storageService);
     _modelState = ModelState();
-    _chatState = ChatState();
+    _chatState = ChatState(storageService: _storageService);
+
+    _settingsState.init();
+    _chatState.init();
   }
 
   @override
@@ -65,6 +75,7 @@ class _SovereignAppState extends State<SovereignApp>
           settingsState: _settingsState,
           modelState: _modelState,
           chatState: _chatState,
+          storageService: _storageService,
           child: MaterialApp(
             title: AppConstants.appName,
             debugShowCheckedModeBanner: false,

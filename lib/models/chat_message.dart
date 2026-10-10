@@ -44,4 +44,40 @@ class ChatMessage {
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'role': role.name,
+        'content': content,
+        'timestamp': timestamp.toIso8601String(),
+        'status': status.name,
+        if (errorMessage != null) 'errorMessage': errorMessage,
+      };
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    final rawStatus = json['status'] as String?;
+    var resolvedStatus = MessageStatus.values.firstWhere(
+      (s) => s.name == rawStatus,
+      orElse: () => MessageStatus.sent,
+    );
+
+    // If a message was saved mid-generation and restored across app restart,
+    // normalize it to sent so it doesn't show an interrupted perpetual loading state.
+    if (resolvedStatus == MessageStatus.generating) {
+      resolvedStatus = MessageStatus.sent;
+    }
+
+    return ChatMessage(
+      id: json['id'] as String? ?? 'msg_${DateTime.now().millisecondsSinceEpoch}',
+      role: MessageRole.values.firstWhere(
+        (r) => r.name == json['role'],
+        orElse: () => MessageRole.user,
+      ),
+      content: json['content'] as String? ?? '',
+      timestamp: DateTime.tryParse(json['timestamp'] as String? ?? '') ??
+          DateTime.now(),
+      status: resolvedStatus,
+      errorMessage: json['errorMessage'] as String?,
+    );
+  }
 }

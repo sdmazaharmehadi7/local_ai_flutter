@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../models/chat_session.dart';
 import '../../state/app_scope.dart';
 import '../common/empty_state_view.dart';
 
@@ -14,9 +15,9 @@ class ChatHistoryScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear Chat History?'),
+        title: const Text('Clear All Chat History?'),
         content: const Text(
-          'This will delete all conversations stored on your local device. This action cannot be undone.',
+          'This will permanently delete all conversations stored on your local device. This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -31,7 +32,74 @@ class ChatHistoryScreen extends StatelessWidget {
               AppScope.chatOf(context).clearAllSessions();
               Navigator.pop(ctx);
             },
-            child: const Text('Clear All'),
+            child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, ChatSession session) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Conversation?'),
+        content: Text('Are you sure you want to delete "${session.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () {
+              AppScope.chatOf(context).deleteSession(session.id);
+              Navigator.pop(ctx);
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRenameDialog(BuildContext context, ChatSession session) {
+    final controller = TextEditingController(text: session.title);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Rename Conversation'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Title',
+            hintText: 'Enter new conversation title',
+          ),
+          onSubmitted: (val) {
+            final trimmed = val.trim();
+            if (trimmed.isNotEmpty) {
+              AppScope.chatOf(context).renameSession(session.id, trimmed);
+              Navigator.pop(ctx);
+            }
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final trimmed = controller.text.trim();
+              if (trimmed.isNotEmpty) {
+                AppScope.chatOf(context).renameSession(session.id, trimmed);
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Save'),
           ),
         ],
       ),
@@ -50,7 +118,7 @@ class ChatHistoryScreen extends StatelessWidget {
         actions: [
           if (sessions.isNotEmpty)
             IconButton(
-              tooltip: 'Clear All',
+              tooltip: 'Clear All History',
               icon: const Icon(Icons.delete_sweep_outlined, size: 20),
               onPressed: () => _confirmClearAll(context),
             ),
@@ -112,12 +180,22 @@ class ChatHistoryScreen extends StatelessWidget {
                             color: theme.colorScheme.outline,
                           ),
                         ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 18),
-                          tooltip: 'Delete',
-                          onPressed: () {
-                            chatState.deleteSession(session.id);
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              tooltip: 'Rename',
+                              onPressed: () =>
+                                  _showRenameDialog(context, session),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 18),
+                              tooltip: 'Delete',
+                              onPressed: () =>
+                                  _confirmDelete(context, session),
+                            ),
+                          ],
                         ),
                         onTap: () {
                           chatState.selectSession(session.id);
