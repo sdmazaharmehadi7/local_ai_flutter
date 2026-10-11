@@ -48,6 +48,24 @@ Choose your platform below to download the pre-compiled, production-ready app:
 
 ---
 
+
+
+# Sovereign AI for macOS — Installation Guide
+
+macOS may display a warning saying Apple cannot verify that `sovereign_ai.app` is free of malware. This can happen because the app is not yet signed and notarized by Apple.
+
+**If you downloaded the app from the official Sovereign AI GitHub repository and trust the download, follow these steps:**
+
+1. Download and extract the macOS ZIP file.
+2. Move `sovereign_ai.app` to your Applications folder.
+3. Try opening the app. If macOS blocks it, open **System Settings → Privacy & Security**.
+4. Scroll to the Security section and select **Open Anyway** for `sovereign_ai.app`, if that option appears.
+5. Confirm your choice when prompted, then open the app again.
+
+**Security note:** Only bypass this warning if you trust the source and have verified the download. This warning does not prove that the app is malicious, but it also does not guarantee that the app is safe.
+
+Apple signing and notarization support is planned for a future release.
+
 </div>
 
 ## 📖 Overview
