@@ -42,7 +42,7 @@ Choose your platform below to download the pre-compiled, production-ready app:
 | Operating System | Package Format | Architecture | Direct Download Link |
 | :--- | :---: | :---: | :--- |
 | **🤖 Android** | `.apk` (Standalone) | `arm64-v8a` (Android 7.0+) | [📥 **Download `app-release.apk`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/app-release.apk) |
-| **🍏 macOS** | `.zip` (Universal `.app`) | Apple Silicon (M1-M4) & Intel | [📥 **Download `SovereignAI-1.0.0-macos.zip`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-1.0.0-macos.zip) |
+| **🍏 macOS** | `.zip` (Universal `.app`) | Apple Silicon (M1-M4) & Intel | [📥 **Download `SovereignAI-1.0.0-macos.zip`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/sovereign_ai-macos.zip) |
 | **🪟 Windows** | `.zip` (Portable `.exe` + DLLs) | 64-bit `x86_64` (Win 10/11) | [📥 **Download `SovereignAI-Windows-x64.zip`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-Windows-x64.zip) |
 | **🐧 Linux** | `.zip` (Portable Bundle) | 64-bit `x86_64` (Ubuntu / Debian / Fedora) | [📥 **Download `SovereignAI-Linux-x64.zip`**](https://github.com/sdmazaharmehadi7/local_ai_flutter/releases/download/v1.0.0/SovereignAI-Linux-x64.zip) |
 
